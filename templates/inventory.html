@@ -15,7 +15,7 @@
         <tr>
             <td>{{ product.name }}</td>
             <td>{{ product.description }}</td>
-            <td>${{ "%.2f"|format(product.price) }}</td>
+            <td>RM{{ "%.2f"|format(product.price) }}</td>
             <td>{{ product.quantity }}</td>
             <td>
                 {% if product.image_filename %}
