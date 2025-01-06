@@ -1,3 +1,6 @@
+<a href="{{ url_for('add_product') }}">
+    <button>Add Product</button>
+</a>
 <!-- Inventory Table -->
 <table border="1" style="width: 100%; border-collapse: collapse; text-align: left;">
     <thead>
@@ -35,6 +38,8 @@
                 </form>
                 <!-- Add Quantity Button -->
                 <button style="margin-right: 5px;" onclick="openAddQuantityModal({{ product.id }}, '{{ product.name }}')">Add</button>
+                <button style="margin-right: 5px;" onclick="openSubtractQuantityModal({{ product.id }}, '{{ product.name }}')">Minus</button>
+            </td>        
             </td>
         </tr>
         {% endfor %}
@@ -49,6 +54,17 @@
         <input type="number" name="amount" id="amount" min="1" required style="margin-bottom: 15px; padding: 5px; width: 100%;"><br>
         <button type="submit" style="margin-right: 10px; padding: 5px 15px;">Submit</button>
         <button type="button" onclick="closeAddQuantityModal()" style="padding: 5px 15px;">Cancel</button>
+    </form>
+</div>
+
+<!-- Subtract Quantity Modal -->
+<div id="subtractQuantityModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; border: 1px solid #ccc; z-index: 1000; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);">
+    <h3 id="modalSubtractProductName"></h3>
+    <form method="POST" id="subtractQuantityForm">
+        <label for="amount">Enter Amount:</label>
+        <input type="number" name="amount" id="subtractAmount" min="1" required style="margin-bottom: 15px; padding: 5px; width: 100%;"><br>
+        <button type="submit" style="margin-right: 10px; padding: 5px 15px;">Submit</button>
+        <button type="button" onclick="closeSubtractQuantityModal()" style="padding: 5px 15px;">Cancel</button>
     </form>
 </div>
 
@@ -73,5 +89,22 @@
         const modal = document.getElementById('addQuantityModal');
         modal.style.display = 'none';
     }
+
+    // JavaScript for managing the subtract quantity modal
+function openSubtractQuantityModal(productId, productName) {
+    const modal = document.getElementById('subtractQuantityModal');
+    const form = document.getElementById('subtractQuantityForm');
+    const modalProductName = document.getElementById('modalSubtractProductName');
+
+    modalProductName.textContent = `Subtract Quantity from ${productName}`;
+    form.action = `/subtract-quantity/${productId}`;
+    modal.style.display = 'block';
+}
+
+function closeSubtractQuantityModal() {
+    const modal = document.getElementById('subtractQuantityModal');
+    modal.style.display = 'none';
+}
+
 </script>
 

@@ -239,6 +239,38 @@ def add_quantity(product_id):
     else:
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
+    
+@app.route('/subtract-quantity/<int:product_id>', methods=['POST'])
+def subtract_quantity(product_id):
+    if 'username' in session:
+        try:
+            product = Product.query.get(product_id)
+            if not product:
+                flash('Product not found.', 'danger')
+                return redirect(url_for('inventory'))
+
+            # Get the amount to subtract from the form
+            amount_to_subtract = int(request.form['amount'])
+            if amount_to_subtract < 0:
+                flash('Invalid amount. Please enter a positive number.', 'danger')
+                return redirect(url_for('inventory'))
+
+            if product.quantity - amount_to_subtract < 0:
+                flash(f'Insufficient stock. Cannot subtract {amount_to_subtract} from {product.name}.', 'danger')
+            else:
+                product.quantity -= amount_to_subtract
+                db.session.commit()
+                flash(f'Subtracted {amount_to_subtract} from {product.name}.', 'success')
+        except ValueError:
+            flash('Please enter a valid number.', 'danger')
+        except Exception as e:
+            flash(f'An error occurred: {e}', 'danger')
+
+        return redirect(url_for('inventory'))
+    else:
+        flash('You need to log in first.', 'warning')
+        return redirect(url_for('login'))
+
 
 @app.route('/logout')
 def logout():
