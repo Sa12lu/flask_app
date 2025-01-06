@@ -16,9 +16,11 @@ db = SQLAlchemy(app)
 UPLOAD_FOLDER = 'static/uploads/'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
-# Ensure the upload folder exists
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# Helper function to check allowed file extensions
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Database Models
 class User(db.Model):
@@ -32,17 +34,13 @@ class Product(db.Model):
     description = db.Column(db.String(500), nullable=True)
     price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    image_filename = db.Column(db.String(100), nullable=True)  # Field to store the image filename
+    image_filename = db.Column(db.String(100), nullable=True)
 
 # Initialize Database
 with app.app_context():
     db.create_all()
 
-# Helper function to check allowed file extensions
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
+# Routes
 @app.route('/')
 def home():
     return redirect(url_for('login'))
@@ -73,7 +71,6 @@ def register():
             flash('Username and Password are required.', 'danger')
             return render_template('register.html')
 
-        # Use pbkdf2:sha256 for hashing
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
 
         new_user = User(username=username, password=hashed_password)
@@ -93,7 +90,7 @@ def dashboard():
     if 'username' in session:
         return render_template('dashboard.html', username=session['username'])
     else:
-        flash('You need to login first.', 'warning')
+        flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
 
 @app.route('/booking')
@@ -101,46 +98,40 @@ def booking():
     if 'username' in session:
         return render_template('booking.html')
     else:
-        flash('You need to login first.', 'warning')
+        flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
 
-@app.route('/inventory', methods=['GET', 'POST'])
+@app.route('/inventory')
 def inventory():
     if 'username' in session:
         products = Product.query.all()
         return render_template('inventory.html', products=products)
     else:
-        flash('You need to login first.', 'warning')
+        flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
 
 @app.route('/add-product', methods=['GET', 'POST'])
 def add_product():
     if 'username' in session:
         if request.method == 'POST':
-            try:
-                name = request.form['name']
-                description = request.form.get('description', '')  # Default to empty if not provided
-                price = float(request.form['price'])
-                quantity = int(request.form['quantity'])
-                file = request.files.get('image')  # Use get to avoid crashes if no file provided
+            name = request.form['name']
+            description = request.form.get('description', '')
+            price = request.form['price']
+            quantity = request.form['quantity']
+            file = request.files.get('image')
 
-                # Validate file
+            try:
+                # Validate input
+                price = float(price)
+                quantity = int(quantity)
+
+                # Handle file upload
                 image_filename = None
                 if file and allowed_file(file.filename):
                     image_filename = secure_filename(file.filename)
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
 
-                    # Prevent overwriting existing files
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
-                    if os.path.exists(file_path):
-                        flash('File already exists. Rename your file or upload a different one.', 'danger')
-                        return redirect(request.url)
-
-                    file.save(file_path)
-                elif file:
-                    flash('Invalid image format. Allowed formats: png, jpg, jpeg, gif.', 'danger')
-                    return redirect(request.url)
-
-                # Save product to database
+                # Add product to database
                 new_product = Product(
                     name=name,
                     description=description,
@@ -154,7 +145,7 @@ def add_product():
                 flash('Product added successfully!', 'success')
                 return redirect(url_for('inventory'))
             except ValueError:
-                flash('Invalid input for price or quantity.', 'danger')
+                flash('Price and quantity must be valid numbers.', 'danger')
             except Exception as e:
                 flash(f'An error occurred: {e}', 'danger')
 
@@ -163,8 +154,67 @@ def add_product():
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
 
+@app.route('/edit-product/<int:product_id>', methods=['GET', 'POST'])
+def edit_product(product_id):
+    if 'username' in session:
+        product = Product.query.get(product_id)
+        if not product:
+            flash('Product not found.', 'danger')
+            return redirect(url_for('inventory'))
+
+        if request.method == 'POST':
+            name = request.form['name']
+            description = request.form.get('description', '')
+            price = request.form['price']
+            quantity = request.form['quantity']
+            file = request.files.get('image')
+
+            try:
+                # Validate input
+                price = float(price)
+                quantity = int(quantity)
+
+                # Update product details
+                product.name = name
+                product.description = description
+                product.price = price
+                product.quantity = quantity
+
+                if file and allowed_file(file.filename):
+                    image_filename = secure_filename(file.filename)
+                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
+                    product.image_filename = image_filename
+
+                db.session.commit()
+                flash('Product updated successfully!', 'success')
+                return redirect(url_for('inventory'))
+            except ValueError:
+                flash('Price and quantity must be valid numbers.', 'danger')
+            except Exception as e:
+                flash(f'An error occurred: {e}', 'danger')
+
+        return render_template('edit_product.html', product=product)
+    else:
+        flash('You need to log in first.', 'warning')
+        return redirect(url_for('login'))
+
 @app.route('/delete-product/<int:product_id>', methods=['POST'])
 def delete_product(product_id):
+    if 'username' in session:
+        product = Product.query.get(product_id)
+        if product:
+            db.session.delete(product)
+            db.session.commit()
+            flash('Product deleted successfully.', 'success')
+        else:
+            flash('Product not found.', 'danger')
+        return redirect(url_for('inventory'))
+    else:
+        flash('You need to log in first.', 'warning')
+        return redirect(url_for('login'))
+
+@app.route('/add-quantity/<int:product_id>', methods=['POST'])
+def add_quantity(product_id):
     if 'username' in session:
         try:
             product = Product.query.get(product_id)
@@ -172,88 +222,23 @@ def delete_product(product_id):
                 flash('Product not found.', 'danger')
                 return redirect(url_for('inventory'))
 
-            # Delete the product
-            db.session.delete(product)
-            db.session.commit()
-            flash('Product deleted successfully!', 'success')
+            amount = int(request.form['amount'])
+            if amount < 0:
+                flash('Invalid amount. Please enter a positive number.', 'danger')
+            else:
+                product.quantity += amount
+                db.session.commit()
+                flash(f'Successfully added {amount} to {product.name}.', 'success')
+
+        except ValueError:
+            flash('Invalid input. Please enter a number.', 'danger')
         except Exception as e:
-            flash(f'Error deleting product: {e}', 'danger')
+            flash(f'An error occurred: {e}', 'danger')
 
         return redirect(url_for('inventory'))
     else:
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
-
-@app.route('/edit-product/<int:product_id>', methods=['GET', 'POST'])
-def edit_product(product_id):
-    if 'username' in session:
-        product = Product.query.get(product_id)
-        if not product:
-            flash('Product not found.', 'danger')
-            return redirect(url_for('inventory'))
-
-        if request.method == 'POST':
-            try:
-                product.name = request.form['name']
-                product.description = request.form.get('description', '')
-                product.price = float(request.form['price'])
-                product.quantity = int(request.form['quantity'])
-
-                # Handle image upload (optional)
-                file = request.files.get('image')
-                if file and allowed_file(file.filename):
-                    image_filename = secure_filename(file.filename)
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
-                    product.image_filename = image_filename
-
-                db.session.commit()
-                flash('Product updated successfully!', 'success')
-                return redirect(url_for('inventory'))
-            except ValueError:
-                flash('Invalid input for price or quantity.', 'danger')
-            except Exception as e:
-                flash(f'An error occurred: {e}', 'danger')
-
-        return render_template('edit_product.html', product=product)
-    else:
-        flash('You need to log in first.', 'warning')
-        return redirect(url_for('login'))
-
-@app.route('/edit-product/<int:product_id>', methods=['GET', 'POST'])
-def edit_product(product_id):
-    if 'username' in session:
-        product = Product.query.get(product_id)
-        if not product:
-            flash('Product not found.', 'danger')
-            return redirect(url_for('inventory'))
-
-        if request.method == 'POST':
-            try:
-                product.name = request.form['name']
-                product.description = request.form.get('description', '')
-                product.price = float(request.form['price'])
-                product.quantity = int(request.form['quantity'])
-
-                # Handle image upload (optional)
-                file = request.files.get('image')
-                if file and allowed_file(file.filename):
-                    image_filename = secure_filename(file.filename)
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
-                    product.image_filename = image_filename
-
-                db.session.commit()
-                flash('Product updated successfully!', 'success')
-                return redirect(url_for('inventory'))
-            except ValueError:
-                flash('Invalid input for price or quantity.', 'danger')
-            except Exception as e:
-                flash(f'An error occurred: {e}', 'danger')
-
-        return render_template('edit_product.html', product=product)
-    else:
-        flash('You need to log in first.', 'warning')
-        return redirect(url_for('login'))
-
 
 @app.route('/logout')
 def logout():
@@ -263,4 +248,3 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
