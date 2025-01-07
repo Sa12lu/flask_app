@@ -35,6 +35,7 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     image_filename = db.Column(db.String(100), nullable=True)
+    priority = db.Column(db.String(10), nullable=False, default='Low')  # Priority column
 
 # Initialize Database
 with app.app_context():
@@ -103,11 +104,20 @@ def booking():
 @app.route('/inventory')
 def inventory():
     if 'username' in session:
-        products = Product.query.all()
+        # Correctly pass `whens` as positional arguments to `db.case`
+        products = Product.query.order_by(
+            db.case(
+                (Product.priority == 'High', 1),
+                (Product.priority == 'Medium', 2),
+                (Product.priority == 'Low', 3)
+            ),
+            Product.name.asc()
+        ).all()
         return render_template('inventory.html', products=products)
     else:
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
+
 
 @app.route('/add-product', methods=['GET', 'POST'])
 def add_product():
@@ -117,6 +127,7 @@ def add_product():
             description = request.form.get('description', '')
             price = request.form['price']
             quantity = request.form['quantity']
+            priority = request.form.get('priority', 'Low')  # Default to Low if not selected
             file = request.files.get('image')
 
             try:
@@ -133,7 +144,8 @@ def add_product():
                     description=description,
                     price=price,
                     quantity=quantity,
-                    image_filename=image_filename
+                    image_filename=image_filename,
+                    priority=priority
                 )
                 db.session.add(new_product)
                 db.session.commit()
@@ -161,6 +173,7 @@ def edit_product(product_id):
             description = request.form.get('description', '')
             price = request.form['price']
             quantity = request.form['quantity']
+            priority = request.form.get('priority', 'Low')
             file = request.files.get('image')
 
             try:
@@ -171,6 +184,7 @@ def edit_product(product_id):
                 product.description = description
                 product.price = price
                 product.quantity = quantity
+                product.priority = priority
 
                 if file and allowed_file(file.filename):
                     image_filename = secure_filename(file.filename)
@@ -196,7 +210,7 @@ def delete_product(product_id):
         if product:
             db.session.delete(product)
             db.session.commit()
-            flash('Product deleted successfully.', 'success')
+            flash('Product deleted successfully!', 'success')
         else:
             flash('Product not found.', 'danger')
         return redirect(url_for('inventory'))

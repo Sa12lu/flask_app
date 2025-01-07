@@ -8,21 +8,52 @@
 <body>
     <h1>Add Product</h1>
     <form method="POST" enctype="multipart/form-data">
+        <!-- Product Name -->
         <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required><br>
+        <input type="text" id="name" name="name" placeholder="Enter product name" required>
 
+        <br>
+
+        <!-- Product Description -->
         <label for="description">Description:</label>
-        <textarea id="description" name="description" placeholder="Enter product description"></textarea><br>
+        <textarea id="description" name="description" placeholder="Enter product description"></textarea>
 
+        <br>
+
+        <!-- Product Price -->
         <label for="price">Price:</label>
-        <input type="number" id="price" step="0.01" name="price" required><br>
+        <input type="number" id="price" step="0.01" name="price" placeholder="Enter product price" required>
 
+        <br>
+
+        <!-- Product Quantity -->
         <label for="quantity">Quantity:</label>
-        <input type="number" id="quantity" name="quantity" min="0" required><br>
+        <input type="number" id="quantity" name="quantity" min="0" placeholder="Enter product quantity" required>
 
+        <br>
+
+        <!-- Product Priority -->
+        <label>Priority:</label>
+        <div class="radio-group">
+            <input type="radio" id="high" name="priority" value="High">
+            <label for="high">High</label>
+
+            <input type="radio" id="medium" name="priority" value="Medium">
+            <label for="medium">Medium</label>
+
+            <input type="radio" id="low" name="priority" value="Low" checked>
+            <label for="low">Low</label>
+        </div>
+
+        <br>
+
+        <!-- Product Image -->
         <label for="image">Image:</label>
-        <input type="file" id="image" name="image" accept="image/*"><br>
+        <input type="file" id="image" name="image" accept="image/*">
 
+        <br>
+
+        <!-- Submit Button -->
         <button type="submit">Add Product</button>
     </form>
     <a href="{{ url_for('inventory') }}">Back to Inventory</a>

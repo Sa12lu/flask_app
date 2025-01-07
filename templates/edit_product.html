@@ -20,6 +20,16 @@
         <label for="quantity">Quantity:</label>
         <input type="number" id="quantity" name="quantity" min="0" value="{{ product.quantity }}" required><br>
 
+        <label>Priority:</label>
+        <div class="radio-group">
+            <input type="radio" id="high" name="priority" value="High" {% if product.priority == 'High' %}checked{% endif %}>
+            <label for="high">High</label><br>
+            <input type="radio" id="medium" name="priority" value="Medium" {% if product.priority == 'Medium' %}checked{% endif %}>
+            <label for="medium">Medium</label><br>
+            <input type="radio" id="low" name="priority" value="Low" {% if product.priority == 'Low' %}checked{% endif %}>
+            <label for="low">Low</label>
+        </div><br>
+
         <label for="image">Image:</label>
         {% if product.image_filename %}
             <p>Current Image: <img src="{{ url_for('static', filename='uploads/' + product.image_filename) }}" alt="{{ product.name }}" width="100"></p>
