@@ -58,7 +58,6 @@ def login():
             return redirect(url_for('dashboard'))
         else:
             flash('Invalid credentials. Please try again.', 'danger')
-    
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -121,17 +120,14 @@ def add_product():
             file = request.files.get('image')
 
             try:
-                # Validate input
                 price = float(price)
                 quantity = int(quantity)
 
-                # Handle file upload
                 image_filename = None
                 if file and allowed_file(file.filename):
                     image_filename = secure_filename(file.filename)
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
 
-                # Add product to database
                 new_product = Product(
                     name=name,
                     description=description,
@@ -141,14 +137,12 @@ def add_product():
                 )
                 db.session.add(new_product)
                 db.session.commit()
-
                 flash('Product added successfully!', 'success')
                 return redirect(url_for('inventory'))
             except ValueError:
                 flash('Price and quantity must be valid numbers.', 'danger')
             except Exception as e:
                 flash(f'An error occurred: {e}', 'danger')
-
         return render_template('add_product.html')
     else:
         flash('You need to log in first.', 'warning')
@@ -170,11 +164,9 @@ def edit_product(product_id):
             file = request.files.get('image')
 
             try:
-                # Validate input
                 price = float(price)
                 quantity = int(quantity)
 
-                # Update product details
                 product.name = name
                 product.description = description
                 product.price = price
@@ -192,7 +184,6 @@ def edit_product(product_id):
                 flash('Price and quantity must be valid numbers.', 'danger')
             except Exception as e:
                 flash(f'An error occurred: {e}', 'danger')
-
         return render_template('edit_product.html', product=product)
     else:
         flash('You need to log in first.', 'warning')
@@ -229,17 +220,15 @@ def add_quantity(product_id):
                 product.quantity += amount
                 db.session.commit()
                 flash(f'Successfully added {amount} to {product.name}.', 'success')
-
         except ValueError:
             flash('Invalid input. Please enter a number.', 'danger')
         except Exception as e:
             flash(f'An error occurred: {e}', 'danger')
-
         return redirect(url_for('inventory'))
     else:
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
-    
+
 @app.route('/subtract-quantity/<int:product_id>', methods=['POST'])
 def subtract_quantity(product_id):
     if 'username' in session:
@@ -249,28 +238,23 @@ def subtract_quantity(product_id):
                 flash('Product not found.', 'danger')
                 return redirect(url_for('inventory'))
 
-            # Get the amount to subtract from the form
-            amount_to_subtract = int(request.form['amount'])
-            if amount_to_subtract < 0:
+            amount = int(request.form['amount'])
+            if amount < 0:
                 flash('Invalid amount. Please enter a positive number.', 'danger')
-                return redirect(url_for('inventory'))
-
-            if product.quantity - amount_to_subtract < 0:
-                flash(f'Insufficient stock. Cannot subtract {amount_to_subtract} from {product.name}.', 'danger')
+            elif product.quantity - amount < 0:
+                flash('Insufficient stock.', 'danger')
             else:
-                product.quantity -= amount_to_subtract
+                product.quantity -= amount
                 db.session.commit()
-                flash(f'Subtracted {amount_to_subtract} from {product.name}.', 'success')
+                flash(f'Successfully subtracted {amount} from {product.name}.', 'success')
         except ValueError:
-            flash('Please enter a valid number.', 'danger')
+            flash('Invalid input. Please enter a number.', 'danger')
         except Exception as e:
             flash(f'An error occurred: {e}', 'danger')
-
         return redirect(url_for('inventory'))
     else:
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
-
 
 @app.route('/logout')
 def logout():
