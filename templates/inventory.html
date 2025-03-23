@@ -11,27 +11,33 @@
             background-color: #f4f4f9;
             color: #333;
         }
+
         h1 {
             text-align: center;
             color: #007bff;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
+
         th, td {
             padding: 10px;
             border: 1px solid #ddd;
             text-align: left;
         }
+
         th {
             background-color: #007bff;
             color: #fff;
         }
+
         img {
             border-radius: 5px;
         }
+
         button, a {
             text-decoration: none;
             padding: 10px 20px;
@@ -42,14 +48,39 @@
             cursor: pointer;
             margin-right: 5px;
         }
+
         button:hover, a:hover {
             background-color: #0056b3;
         }
+
         .type-header {
             background-color: #d9edf7;
             font-size: 1.2em;
             font-weight: bold;
             text-align: center;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            width: 300px;
+        }
+
+        .modal h3 {
+            margin-bottom: 15px;
+        }
+
+        .modal button {
+            margin-right: 10px;
         }
     </style>
 </head>
@@ -59,6 +90,7 @@
         <button style="margin-bottom: 15px;">Add Product</button>
     </a>
 
+    <!-- Inventory Table -->
     <table>
         <thead>
             <tr>
@@ -93,7 +125,7 @@
                             <button>Edit</button>
                         </a>
                         <form method="POST" action="{{ url_for('delete_product', product_id=product.id) }}" style="display: inline;">
-                            <button type="submit" onclick="return confirm('Are you sure?')">Delete</button>
+                            <button type="submit" onclick="return confirm('Are you sure you want to delete this product?')">Delete</button>
                         </form>
                         <button onclick="openAddQuantityModal({{ product.id }}, '{{ product.name }}')">Increase</button>
                         <button onclick="openSubtractQuantityModal({{ product.id }}, '{{ product.name }}')">Decrease</button>
@@ -103,5 +135,57 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Add Quantity Modal -->
+    <div id="addQuantityModal" class="modal">
+        <h3 id="modalProductName"></h3>
+        <form method="POST" id="addQuantityForm">
+            <label for="amount">Enter Amount:</label>
+            <input type="number" name="amount" id="amount" min="1" required><br>
+            <button type="submit">Submit</button>
+            <button type="button" onclick="closeAddQuantityModal()">Cancel</button>
+        </form>
+    </div>
+
+    <!-- Subtract Quantity Modal -->
+    <div id="subtractQuantityModal" class="modal">
+        <h3 id="modalSubtractProductName"></h3>
+        <form method="POST" id="subtractQuantityForm">
+            <label for="subtractAmount">Enter Amount:</label>
+            <input type="number" name="amount" id="subtractAmount" min="1" required><br>
+            <button type="submit">Submit</button>
+            <button type="button" onclick="closeSubtractQuantityModal()">Cancel</button>
+        </form>
+    </div>
+
+    <script>
+        function openAddQuantityModal(productId, productName) {
+            const modal = document.getElementById('addQuantityModal');
+            const form = document.getElementById('addQuantityForm');
+            const modalProductName = document.getElementById('modalProductName');
+
+            modalProductName.textContent = `Add Quantity to ${productName}`;
+            form.action = `/add-quantity/${productId}`;
+            modal.style.display = 'block';
+        }
+
+        function closeAddQuantityModal() {
+            document.getElementById('addQuantityModal').style.display = 'none';
+        }
+
+        function openSubtractQuantityModal(productId, productName) {
+            const modal = document.getElementById('subtractQuantityModal');
+            const form = document.getElementById('subtractQuantityForm');
+            const modalProductName = document.getElementById('modalSubtractProductName');
+
+            modalProductName.textContent = `Subtract Quantity from ${productName}`;
+            form.action = `/subtract-quantity/${productId}`;
+            modal.style.display = 'block';
+        }
+
+        function closeSubtractQuantityModal() {
+            document.getElementById('subtractQuantityModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
