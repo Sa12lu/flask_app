@@ -60,28 +60,25 @@
             text-align: center;
         }
 
-        .modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            width: 300px;
+        .progress-container {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            overflow: hidden;
         }
 
-        .modal h3 {
-            margin-bottom: 15px;
+        .progress-bar {
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
         }
 
-        .modal button {
-            margin-right: 10px;
-        }
+        .green { background-color: #28a745; }  /* Sufficient */
+        .yellow { background-color: #ffc107; } /* Almost Insufficient */
+        .red { background-color: #dc3545; }    /* Insufficient */
     </style>
 </head>
 <body>
@@ -97,6 +94,7 @@
                 <th>Name</th>
                 <th>Description</th>
                 <th>Quantity</th>
+                <th>Status</th>
                 <th>Priority</th>
                 <th>Image</th>
                 <th>Actions</th>
@@ -105,13 +103,24 @@
         <tbody>
             {% for type, products in grouped_products.items() %}
                 <tr class="type-header">
-                    <td colspan="6">{{ type }}</td>
+                    <td colspan="7">{{ type }}</td>
                 </tr>
                 {% for product in products %}
                 <tr>
                     <td>{{ product.name }}</td>
                     <td>{{ product.description }}</td>
                     <td>{{ product.quantity }}</td>
+                    
+                    <!-- Status with progress bar -->
+                    <td>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="progress-{{ product.id }}"
+                                data-quantity="{{ product.quantity }}">
+                                Loading...
+                            </div>
+                        </div>
+                    </td>
+
                     <td>{{ product.priority }}</td>
                     <td>
                         {% if product.image_filename %}
@@ -186,6 +195,32 @@
         function closeSubtractQuantityModal() {
             document.getElementById('subtractQuantityModal').style.display = 'none';
         }
+
+        // JavaScript to update progress bar dynamically
+        document.addEventListener("DOMContentLoaded", function() {
+            const progressBars = document.querySelectorAll(".progress-bar");
+            
+            progressBars.forEach(bar => {
+                let quantity = parseInt(bar.dataset.quantity);
+                let progressText = "";
+                let progressColor = "";
+
+                if (quantity > 15) {
+                    progressColor = "green";
+                    progressText = "Item Sufficient";
+                } else if (quantity > 5) {
+                    progressColor = "yellow";
+                    progressText = "Almost Insufficient";
+                } else {
+                    progressColor = "red";
+                    progressText = "Insufficient, Please Restock";
+                }
+
+                bar.classList.add(progressColor);
+                bar.style.width = Math.min(quantity * 5, 100) + "%"; // Scale width dynamically
+                bar.textContent = progressText;
+            });
+        });
     </script>
 </body>
 </html>
