@@ -213,5 +213,6 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    print("Starting Flask app...")  # Debugging print
     app.run(debug=True)
