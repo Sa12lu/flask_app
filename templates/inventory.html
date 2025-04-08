@@ -11,74 +11,65 @@
             background-color: #f4f4f9;
             color: #333;
         }
-
         h1 {
             text-align: center;
             color: #007bff;
         }
-
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
         }
-
         th, td {
             padding: 10px;
             border: 1px solid #ddd;
             text-align: left;
         }
-
         th {
             background-color: #007bff;
             color: #fff;
         }
-
-        img {
-            border-radius: 5px;
-        }
-
-        button, a {
-            text-decoration: none;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-right: 5px;
-        }
-
-        button:hover, a:hover {
-            background-color: #0056b3;
-        }
-
-        .type-header {
-            background-color: #d9edf7;
-            font-size: 1.2em;
-            font-weight: bold;
-            text-align: center;
-        }
-
         .progress-container {
             width: 100%;
             background-color: #ddd;
             border-radius: 5px;
             overflow: hidden;
         }
-
         .progress-bar {
             height: 20px;
             text-align: center;
-            line-height: 20px;
             color: white;
+            line-height: 20px;
             font-size: 12px;
             font-weight: bold;
         }
-
-        .green { background-color: #28a745; }  /* Sufficient */
-        .yellow { background-color: #ffc107; } /* Almost Insufficient */
-        .red { background-color: #dc3545; }    /* Insufficient */
+        .sufficient {
+            background-color: green;
+        }
+        .almost-insufficient {
+            background-color: yellow;
+            color: black;
+        }
+        .insufficient {
+            background-color: red;
+        }
+        .type-header {
+            background-color: #d9edf7;
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -87,16 +78,15 @@
         <button style="margin-bottom: 15px;">Add Product</button>
     </a>
 
-    <!-- Inventory Table -->
     <table>
         <thead>
             <tr>
                 <th>Name</th>
                 <th>Description</th>
                 <th>Quantity</th>
-                <th>Status</th>
                 <th>Priority</th>
                 <th>Image</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -109,18 +99,7 @@
                 <tr>
                     <td>{{ product.name }}</td>
                     <td>{{ product.description }}</td>
-                    <td>{{ product.quantity }}</td>
-                    
-                    <!-- Status with progress bar -->
-                    <td>
-                        <div class="progress-container">
-                            <div class="progress-bar" id="progress-{{ product.id }}"
-                                data-quantity="{{ product.quantity }}">
-                                Loading...
-                            </div>
-                        </div>
-                    </td>
-
+                    <td id="quantity-{{ product.id }}">{{ product.quantity }}</td>
                     <td>{{ product.priority }}</td>
                     <td>
                         {% if product.image_filename %}
@@ -128,6 +107,24 @@
                         {% else %}
                             <span>No image</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <div class="progress-container">
+                            <div id="progress-{{ product.id }}" 
+                                 class="progress-bar 
+                                    {% if product.quantity >= 10 %}sufficient
+                                    {% elif product.quantity >= 5 %}almost-insufficient
+                                    {% else %}insufficient{% endif %}" 
+                                 style="width: {% if product.quantity >= 10 %}100{% elif product.quantity >= 5 %}50{% else %}20{% endif %}%;">
+                                {% if product.quantity >= 10 %}
+                                    Sufficient
+                                {% elif product.quantity >= 5 %}
+                                    Almost Insufficient
+                                {% else %}
+                                    Insufficient
+                                {% endif %}
+                            </div>
+                        </div>
                     </td>
                     <td>
                         <a href="{{ url_for('edit_product', product_id=product.id) }}">
@@ -145,8 +142,8 @@
         </tbody>
     </table>
 
-    <!-- Add Quantity Modal -->
-    <div id="addQuantityModal" class="modal">
+     <!-- Add Quantity Modal -->
+     <div id="addQuantityModal" class="modal">
         <h3 id="modalProductName"></h3>
         <form method="POST" id="addQuantityForm">
             <label for="amount">Enter Amount:</label>
@@ -156,71 +153,51 @@
         </form>
     </div>
 
-    <!-- Subtract Quantity Modal -->
-    <div id="subtractQuantityModal" class="modal">
-        <h3 id="modalSubtractProductName"></h3>
-        <form method="POST" id="subtractQuantityForm">
-            <label for="subtractAmount">Enter Amount:</label>
-            <input type="number" name="amount" id="subtractAmount" min="1" required><br>
-            <button type="submit">Submit</button>
-            <button type="button" onclick="closeSubtractQuantityModal()">Cancel</button>
-        </form>
-    </div>
+  <!-- Subtract Quantity Modal -->
+  <div id="subtractQuantityModal" class="modal">
+    <h3 id="modalSubtractProductName"></h3>
+    <form method="POST" id="subtractQuantityForm">
+        <label for="subtractAmount">Enter Amount:</label>
+        <input type="number" name="amount" id="subtractAmount" min="1" required><br>
+        <button type="submit">Submit</button>
+        <button type="button" onclick="closeSubtractQuantityModal()">Cancel</button>
+    </form>
+</div>
 
-    <script>
-        function openAddQuantityModal(productId, productName) {
-            const modal = document.getElementById('addQuantityModal');
-            const form = document.getElementById('addQuantityForm');
-            const modalProductName = document.getElementById('modalProductName');
 
-            modalProductName.textContent = `Add Quantity to ${productName}`;
-            form.action = `/add-quantity/${productId}`;
-            modal.style.display = 'block';
-        }
+<script>
+    function openAddQuantityModal(productId, productName) {
+        const modal = document.getElementById('addQuantityModal');
+        const form = document.getElementById('addQuantityForm');
+        const modalProductName = document.getElementById('modalProductName');
 
-        function closeAddQuantityModal() {
-            document.getElementById('addQuantityModal').style.display = 'none';
-        }
 
-        function openSubtractQuantityModal(productId, productName) {
-            const modal = document.getElementById('subtractQuantityModal');
-            const form = document.getElementById('subtractQuantityForm');
-            const modalProductName = document.getElementById('modalSubtractProductName');
+        modalProductName.textContent = `Add Quantity to ${productName}`;
+        form.action = `/add-quantity/${productId}`;
+        modal.style.display = 'block';
+    }
 
-            modalProductName.textContent = `Subtract Quantity from ${productName}`;
-            form.action = `/subtract-quantity/${productId}`;
-            modal.style.display = 'block';
-        }
 
-        function closeSubtractQuantityModal() {
-            document.getElementById('subtractQuantityModal').style.display = 'none';
-        }
+    function closeAddQuantityModal() {
+        document.getElementById('addQuantityModal').style.display = 'none';
+    }
 
-        // JavaScript to update progress bar dynamically
-        document.addEventListener("DOMContentLoaded", function() {
-            const progressBars = document.querySelectorAll(".progress-bar");
-            
-            progressBars.forEach(bar => {
-                let quantity = parseInt(bar.dataset.quantity);
-                let progressText = "";
-                let progressColor = "";
 
-                if (quantity > 15) {
-                    progressColor = "green";
-                    progressText = "Item Sufficient";
-                } else if (quantity > 5) {
-                    progressColor = "yellow";
-                    progressText = "Almost Insufficient";
-                } else {
-                    progressColor = "red";
-                    progressText = "Insufficient, Please Restock";
-                }
+    function openSubtractQuantityModal(productId, productName) {
+        const modal = document.getElementById('subtractQuantityModal');
+        const form = document.getElementById('subtractQuantityForm');
+        const modalProductName = document.getElementById('modalSubtractProductName');
 
-                bar.classList.add(progressColor);
-                bar.style.width = Math.min(quantity * 5, 100) + "%"; // Scale width dynamically
-                bar.textContent = progressText;
-            });
-        });
-    </script>
+
+        modalProductName.textContent = `Subtract Quantity from ${productName}`;
+        form.action = `/subtract-quantity/${productId}`;
+        modal.style.display = 'block';
+    }
+
+
+    function closeSubtractQuantityModal() {
+        document.getElementById('subtractQuantityModal').style.display = 'none';
+    }
+</script>
 </body>
 </html>

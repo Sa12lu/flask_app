@@ -1,5 +1,7 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+import io
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import send_file
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -7,7 +9,7 @@ from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# MySQL Configuration (using XAMPP)
+# MySQL Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/flask_app'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -18,7 +20,6 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Helper function to check allowed file extensions
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -31,17 +32,30 @@ class User(db.Model):
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    type = db.Column(db.String(50), nullable=True)  # Now allows NULL and defaults to "Uncategorized"
+    type = db.Column(db.String(50), nullable=True)
     description = db.Column(db.String(500), nullable=True)
-    quantity = db.Column(db.Integer, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=0)
     priority = db.Column(db.String(10), nullable=False, default='Low')
     image_filename = db.Column(db.String(100), nullable=True)
 
-# Initialize Database
+class SaleProduct(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(500), nullable=True)
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    image_data = db.Column(db.LargeBinary, nullable=True)  
+    image_mimetype = db.Column(db.String(50), nullable=True)  
+
+class PurchasedProduct(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(50), nullable=False, default="Pending")
+
 with app.app_context():
     db.create_all()
 
-# Routes
 @app.route('/')
 def home():
     return redirect(url_for('login'))
@@ -58,7 +72,7 @@ def login():
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
         else:
-            flash('Invalid credentials. Please try again.', 'danger')
+            flash('Invalid credentials.', 'danger')
 
     return render_template('login.html')
 
@@ -97,18 +111,20 @@ def dashboard():
 @app.route('/inventory')
 def inventory():
     if 'username' in session:
-        # Fetch products sorted by type and priority
         products = Product.query.order_by(
-            db.func.ifnull(Product.type, "Uncategorized"),  # Handle NULL types
+            db.case(
+                (Product.type == None, "Uncategorized"),
+                else_=Product.type
+            ),
             db.case(
                 (Product.priority == 'High', 1),
                 (Product.priority == 'Medium', 2),
-                (Product.priority == 'Low', 3)
+                (Product.priority == 'Low', 3),
+                else_=4
             ),
             Product.name.asc()
         ).all()
 
-        # Group products by type, defaulting empty types to "Uncategorized"
         grouped_products = {}
         for product in products:
             product_type = product.type if product.type else "Uncategorized"
@@ -125,15 +141,14 @@ def inventory():
 def add_product():
     if 'username' in session:
         if request.method == 'POST':
-            name = request.form['name']
-            type = request.form.get('type', 'Uncategorized')  # Default to "Uncategorized"
-            description = request.form.get('description', '')
-            quantity = request.form['quantity']
-            priority = request.form.get('priority', 'Low')
-            file = request.files.get('image')
-
             try:
-                quantity = int(quantity)
+                name = request.form['name']
+                product_type = request.form.get('type', 'Uncategorized')
+                description = request.form.get('description', '')
+                quantity = int(request.form['quantity'])
+                priority = request.form.get('priority', 'Low')
+                file = request.files.get('image')
+
                 image_filename = None
                 if file and allowed_file(file.filename):
                     image_filename = secure_filename(file.filename)
@@ -141,7 +156,7 @@ def add_product():
 
                 new_product = Product(
                     name=name,
-                    type=type,
+                    type=product_type,
                     description=description,
                     quantity=quantity,
                     priority=priority,
@@ -152,15 +167,11 @@ def add_product():
                 flash('Product added successfully!', 'success')
                 return redirect(url_for('inventory'))
             except ValueError:
-                flash('Invalid quantity.', 'danger')
-            except Exception as e:
-                flash(f'An error occurred: {e}', 'danger')
+                flash('Invalid quantity input.', 'danger')
 
         return render_template('add_product.html')
-
-    else:
-        flash('You need to log in first.', 'warning')
-        return redirect(url_for('login'))
+    flash('You need to log in first.', 'warning')
+    return redirect(url_for('login'))
 
 @app.route('/edit-product/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
@@ -197,15 +208,188 @@ def delete_product(product_id):
     if 'username' in session:
         product = Product.query.get(product_id)
         if product:
+            if product.image_filename:
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], product.image_filename)
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+
             db.session.delete(product)
             db.session.commit()
             flash('Product deleted successfully!', 'success')
         else:
             flash('Product not found.', 'danger')
         return redirect(url_for('inventory'))
+    flash('You need to log in first.', 'warning')
+    return redirect(url_for('login'))
+
+@app.route('/add-quantity/<int:product_id>', methods=['POST'])
+def add_quantity(product_id):
+    if 'username' in session:
+        try:
+            product = Product.query.get(product_id)
+            if not product:
+                flash('Product not found.', 'danger')
+                return redirect(url_for('inventory'))
+
+
+            amount = int(request.form['amount'])
+            if amount < 0:
+                flash('Invalid amount. Please enter a positive number.', 'danger')
+            else:
+                product.quantity += amount
+                db.session.commit()
+                flash(f'Successfully added {amount} to {product.name}.', 'success')
+        except ValueError:
+            flash('Invalid input. Please enter a number.', 'danger')
+        except Exception as e:
+            flash(f'An error occurred: {e}', 'danger')
+        return redirect(url_for('inventory'))
     else:
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
+
+
+@app.route('/subtract-quantity/<int:product_id>', methods=['POST'])
+def subtract_quantity(product_id):
+    if 'username' in session:
+        try:
+            product = Product.query.get(product_id)
+            if not product:
+                flash('Product not found.', 'danger')
+                return redirect(url_for('inventory'))
+
+
+            amount = int(request.form['amount'])
+            if amount < 0:
+                flash('Invalid amount. Please enter a positive number.', 'danger')
+            elif product.quantity - amount < 0:
+                flash('Insufficient stock.', 'danger')
+            else:
+                product.quantity -= amount
+                db.session.commit()
+                flash(f'Successfully subtracted {amount} from {product.name}.', 'success')
+        except ValueError:
+            flash('Invalid input. Please enter a number.', 'danger')
+        except Exception as e:
+            flash(f'An error occurred: {e}', 'danger')
+        return redirect(url_for('inventory'))
+    else:
+        flash('You need to log in first.', 'warning')
+        return redirect(url_for('login'))
+    
+@app.route('/sale')
+def sale():
+    if 'username' in session:
+        products = SaleProduct.query.all()
+        purchased_products = PurchasedProduct.query.all()
+        return render_template('sale.html', products=products, purchased_products=purchased_products)
+    else:
+        flash('You need to log in first.', 'warning')
+        return redirect(url_for('login'))
+
+# Route increase sale product quantity
+@app.route('/increase-sale-quantity/<int:product_id>', methods=['POST'])
+def increase_sale_quantity(product_id):
+    if 'username' in session:
+        product = SaleProduct.query.get(product_id)
+        if product:
+            product.quantity += 1
+            db.session.commit()
+            return jsonify({'success': True, 'new_quantity': product.quantity})
+        return jsonify({'success': False, 'error': 'Product not found'}), 404
+    return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+
+@app.route('/add-product-sale', methods=['GET', 'POST'])
+def add_product_sale():
+    if 'username' in session:  # Check if user is logged in
+        if request.method == 'POST':
+            name = request.form['name']
+            description = request.form.get('description', '')
+            price = request.form['price']
+            quantity = request.form['quantity']
+            file = request.files.get('image')
+
+            try:
+                price = float(price)
+                quantity = int(quantity)
+
+                image_data = None
+                image_mimetype = None
+
+                # Check if image is provided and allowed
+                if file and allowed_file(file.filename):
+                    image_data = file.read()
+                    image_mimetype = file.mimetype
+
+                # Create new product entry
+                new_product = SaleProduct(
+                    name=name,
+                    description=description,
+                    price=price,
+                    quantity=quantity,
+                    image_data=image_data,
+                    image_mimetype=image_mimetype
+                )
+
+                db.session.add(new_product)
+                db.session.commit()
+
+                flash('Product added successfully!', 'success')
+                return redirect(url_for('sale'))
+
+            except ValueError:
+                flash('Invalid price or quantity.', 'danger')
+            except Exception as e:
+                flash(f'An error occurred: {e}', 'danger')
+
+        return render_template('add_product_sale.html')
+
+    else:
+        flash('You need to log in first.', 'warning')
+        return redirect(url_for('login'))
+
+@app.route('/product-sale-image/<int:product_id>')
+def product_sale_image(product_id):
+    product = SaleProduct.query.get_or_404(product_id)
+    if not product.image_data:
+        return 'No image', 404
+    return send_file(
+        io.BytesIO(product.image_data),
+        mimetype=product.image_mimetype,
+        download_name=f"product_{product.id}.jpg"
+    )
+
+
+@app.route('/delete-sale-product/<int:product_id>', methods=['POST'])
+def delete_sale_product(product_id):
+    if 'username' in session:
+        product = SaleProduct.query.get(product_id)
+        if product:
+            db.session.delete(product)
+            db.session.commit()
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'error': 'Product not found'}), 404
+    return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+
+# Route update sell delivery
+@app.route('/update-delivery-status/<int:purchase_id>', methods=['POST'])
+def update_delivery_status(purchase_id):
+    if 'username' in session:
+        purchase = PurchasedProduct.query.get(purchase_id)
+        if purchase:
+            purchase.status = request.form['status']
+            db.session.commit()
+            return jsonify({'success': True, 'new_status': purchase.status})
+        return jsonify({'success': False, 'error': 'Purchase not found'}), 404
+    return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+
+# Route for product that had been purchased
+@app.route('/purchased-products')
+def purchased_products():
+    if 'username' in session:
+        products = PurchasedProduct.query.all()
+        return jsonify([{'name': p.name, 'quantity': p.quantity, 'status': p.status} for p in products])
+    return jsonify({'error': 'Unauthorized'}), 401
 
 @app.route('/logout')
 def logout():
@@ -214,5 +398,5 @@ def logout():
     return redirect(url_for('login'))
 
 if __name__ == "__main__":
-    print("Starting Flask app...")  # Debugging print
-    app.run(debug=True)
+    print("Starting Flask app...")
+    app.run(host="0.0.0.0", port=5001, debug=True)
