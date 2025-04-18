@@ -2,6 +2,7 @@ import os
 import io
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask import send_file
+from flask import Response
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -52,6 +53,16 @@ class PurchasedProduct(db.Model):
     name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(50), nullable=False, default="Pending")
+    username = db.Column(db.String(150), nullable=False)  # Add this line
+
+class GiftBooking(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    image_data = db.Column(db.LargeBinary, nullable=True)  #  Stores image in binary
+    image_mimetype = db.Column(db.String(50))               # Stores the image file type (JPEG, PNG)
+    description = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    amount = db.Column(db.Integer, nullable=False)
+
 
 with app.app_context():
     db.create_all()
@@ -359,6 +370,28 @@ def product_sale_image(product_id):
         download_name=f"product_{product.id}.jpg"
     )
 
+@app.route('/edit-product-sale/<int:product_id>', methods=['GET', 'POST'])
+def edit_product_sale(product_id):
+    product = SaleProduct.query.get_or_404(product_id)
+
+    if request.method == 'POST':
+        product.name = request.form['name']
+        product.description = request.form['description']
+        product.price = float(request.form['price'])
+        product.quantity = int(request.form['quantity'])
+
+        # Handle image update (optional)
+        image_file = request.files.get('image')
+        if image_file and image_file.filename:
+            product.image_data = image_file.read()
+            product.image_mimetype = image_file.mimetype
+
+        db.session.commit()
+        flash('Product updated successfully!', 'success')
+        return redirect(url_for('sale'))
+
+    return render_template('edit_product_sale.html', product=product)
+
 
 @app.route('/delete-sale-product/<int:product_id>', methods=['POST'])
 def delete_sale_product(product_id):
@@ -371,25 +404,148 @@ def delete_sale_product(product_id):
         return jsonify({'success': False, 'error': 'Product not found'}), 404
     return jsonify({'success': False, 'error': 'Unauthorized'}), 401
 
-# Route update sell delivery
-@app.route('/update-delivery-status/<int:purchase_id>', methods=['POST'])
-def update_delivery_status(purchase_id):
-    if 'username' in session:
-        purchase = PurchasedProduct.query.get(purchase_id)
-        if purchase:
-            purchase.status = request.form['status']
-            db.session.commit()
-            return jsonify({'success': True, 'new_status': purchase.status})
-        return jsonify({'success': False, 'error': 'Purchase not found'}), 404
-    return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-
-# Route for product that had been purchased
 @app.route('/purchased-products')
 def purchased_products():
     if 'username' in session:
         products = PurchasedProduct.query.all()
-        return jsonify([{'name': p.name, 'quantity': p.quantity, 'status': p.status} for p in products])
+        return jsonify([
+            {
+                'id': p.id,
+                'name': p.name,
+                'quantity': p.quantity,
+                'status': p.status,
+                'username': p.username
+            } for p in products
+        ])
     return jsonify({'error': 'Unauthorized'}), 401
+
+@app.route('/update-delivery-status/<int:product_id>', methods=['POST'])
+def update_delivery_status(product_id):
+    product = PurchasedProduct.query.get_or_404(product_id)
+    new_status = request.json.get('status')
+    if new_status in ["Pending", "Delivered"]:
+        product.status = new_status
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'success': False, 'error': 'Invalid status'}), 400
+
+@app.route('/book-gift', methods=['GET', 'POST'])
+def book_gift():
+    if request.method == 'POST':
+        image = request.files.get('image')
+        description = request.form.get('description')
+        price = float(request.form.get('price'))
+        amount = int(request.form.get('amount'))
+
+        image_data = image.read() if image else None
+        mimetype = image.mimetype if image else None
+
+        gift = GiftBooking(
+            image_data=image_data,
+            image_mimetype=mimetype,
+            description=description,
+            price=price,
+            amount=amount
+        )
+        db.session.add(gift)
+        db.session.commit()
+        flash("Gift successfully booked!", "success")
+        return redirect(url_for('book_gift'))
+
+    # 🟡 This line was missing
+    gifts = GiftBooking.query.all()
+
+    return render_template('book_gift.html', gifts=gifts)
+
+
+@app.route('/gift-image/<int:gift_id>')
+def gift_image(gift_id):
+    gift = GiftBooking.query.get_or_404(gift_id)
+    if gift.image_data:
+        return Response(gift.image_data, mimetype=gift.image_mimetype)
+    return "No image found", 404
+
+@app.route('/add-gift', methods=['GET', 'POST'])
+def add_gift():
+    if request.method == 'POST':
+        file = request.files.get('image')
+
+        # Image handling
+        if file and file.filename != '':
+            image_data = file.read()
+            mimetype = file.mimetype
+        else:
+            image_data = None
+            mimetype = None
+
+        try:
+            price = abs(float(request.form['price']))
+            amount = abs(int(request.form['amount']))
+        except ValueError:
+            return "Invalid input: price must be a number and amount must be an integer.", 400
+
+        new_gift = GiftBooking(
+            image_data=image_data,
+            image_mimetype=mimetype,
+            description=request.form['description'],
+            price=price,
+            amount=amount
+        )
+        db.session.add(new_gift)
+        db.session.commit()
+        return redirect(url_for('book_gift'))
+
+    return render_template('add_gift.html')
+
+@app.route('/edit-gift/<int:gift_id>', methods=['GET', 'POST'])
+def edit_gift(gift_id):
+    gift = GiftBooking.query.get_or_404(gift_id)
+
+    if request.method == 'POST':
+        gift.description = request.form.get('description')
+        try:
+            gift.price = abs(float(request.form.get('price')))
+            gift.amount = abs(int(request.form.get('amount')))
+        except ValueError:
+            flash("Invalid input.", "danger")
+            return redirect(url_for('edit_gift', gift_id=gift_id))
+
+        image = request.files.get('image')
+        if image and image.filename != '':
+            gift.image_data = image.read()
+            gift.image_mimetype = image.mimetype
+
+        db.session.commit()
+        flash("Gift successfully updated!", "success")
+        return redirect(url_for('book_gift'))
+
+    return render_template('edit_gift.html', gift=gift)
+
+@app.route('/increase-gift/<int:gift_id>', methods=['POST'])
+def increase_gift(gift_id):
+    gift = GiftBooking.query.get_or_404(gift_id)
+    data = request.get_json()
+
+    try:
+        increase_amount = int(data.get('amount'))
+        if increase_amount <= 0:
+            raise ValueError
+    except (ValueError, TypeError):
+        return jsonify(success=False), 400
+
+    gift.amount += increase_amount
+    db.session.commit()
+
+    return jsonify(success=True, new_amount=gift.amount)
+
+@app.route('/delete-gift/<int:gift_id>', methods=['POST'])
+def delete_gift(gift_id):
+    gift = GiftBooking.query.get_or_404(gift_id)
+    db.session.delete(gift)
+    db.session.commit()
+    return jsonify(success=True)
+
+
 
 @app.route('/logout')
 def logout():

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Product</title>
+  <style>
+    label { display: block; margin-top: 10px; }
+    input, textarea { width: 100%; padding: 8px; margin-top: 5px; }
+    .form-group { margin-bottom: 15px; }
+    .btn { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .btn:hover { background-color: #0056b3; }
+  </style>
+</head>
+<body>
+  <h2>Edit Product</h2>
+
+  <form action="{{ url_for('edit_product_sale', product_id=product.id) }}" method="POST" enctype="multipart/form-data">
+    <div class="form-group">
+      <label for="name">Product Name:</label>
+      <input type="text" id="name" name="name" value="{{ product.name }}" required>
+    </div>
+
+    <div class="form-group">
+      <label for="description">Description:</label>
+      <textarea id="description" name="description" rows="4" required>{{ product.description }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label for="price">Price (RM):</label>
+      <input type="number" id="price" name="price" value="{{ product.price }}" step="0.01" required>
+    </div>
+
+    <div class="form-group">
+      <label for="quantity">Quantity:</label>
+      <input type="number" id="quantity" name="quantity" value="{{ product.quantity }}" required>
+    </div>
+
+    <div class="form-group">
+      <label for="image">Change Image (optional):</label>
+      <input type="file" id="image" name="image">
+    </div>
+
+    {% if product.image_data %}
+      <p>Current Image:</p>
+      <img src="{{ url_for('product_sale_image', product_id=product.id) }}" style="max-width: 200px;">
+    {% endif %}
+
+    <button type="submit" class="btn">Update Product</button>
+  </form>
+</body>
+</html>

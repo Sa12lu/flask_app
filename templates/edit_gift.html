@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Gift</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 30px auto;
+            max-width: 600px;
+            background-color: #f4f4f9;
+            padding: 20px;
+            border-radius: 10px;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #007bff;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .current-img {
+            margin-top: 10px;
+        }
+
+        img {
+            width: 100px;
+            height: auto;
+            display: block;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Edit Gift</h1>
+
+<form method="POST" enctype="multipart/form-data">
+    <label>Description:</label>
+    <input type="text" name="description" value="{{ gift.description }}" required>
+
+    <label>Price (RM):</label>
+    <input type="number" name="price" step="0.01" min="0" id="price" value="{{ gift.price }}" required>
+
+    <label>Amount:</label>
+    <input type="number" name="amount" min="0" id="amount" value="{{ gift.amount }}" required>
+
+    <label>Change Image (optional):</label>
+    <input type="file" name="image">
+
+    {% if gift.image_data %}
+        <div class="current-img">
+            <strong>Current Image:</strong>
+            <img src="{{ url_for('gift_image', gift_id=gift.id) }}" alt="Current Gift Image">
+        </div>
+    {% endif %}
+
+    <button type="submit">Update Gift</button>
+</form>
+
+<a class="back-link" href="{{ url_for('book_gift') }}">← Back to Booked Gifts</a>
+
+<script>
+    const preventNegative = (e) => {
+        if (e.key === '-' || e.key === 'e') {
+            e.preventDefault();
+        }
+    };
+
+    document.getElementById('price').addEventListener('keydown', preventNegative);
+    document.getElementById('amount').addEventListener('keydown', preventNegative);
+</script>
+
+
+</body>
+</html>
