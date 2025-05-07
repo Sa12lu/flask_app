@@ -1,5 +1,8 @@
 import os
 import io
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import SQLAlchemyError
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask import send_file
 from flask import Response
@@ -54,15 +57,33 @@ class PurchasedProduct(db.Model):
     quantity = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(50), nullable=False, default="Pending")
     username = db.Column(db.String(150), nullable=False)  # Add this line
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # add NEW time date
 
 class GiftBooking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    gift_name = db.Column(db.String(100), nullable=False)  # Added gift name 
     image_data = db.Column(db.LargeBinary, nullable=True)  #  Stores image in binary
     image_mimetype = db.Column(db.String(50))               # Stores the image file type (JPEG, PNG)
     description = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
     amount = db.Column(db.Integer, nullable=False)
 
+class Booked(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    gift_name = db.Column(db.String(100), nullable=False)  # ← Add this line
+    description = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    customer_name = db.Column(db.String(150), nullable=False)
+    customer_id = db.Column(db.Integer, db.ForeignKey('cust_user.id'))  
+    status = db.Column(db.String(50), default='Pending')
+    
+class CustUser(db.Model):
+    __tablename__ = 'cust_user'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
 
 with app.app_context():
     db.create_all()
@@ -432,6 +453,7 @@ def update_delivery_status(product_id):
 @app.route('/book-gift', methods=['GET', 'POST'])
 def book_gift():
     if request.method == 'POST':
+        gift_name = request.form.get('gift_name')  # <-- New line
         image = request.files.get('image')
         description = request.form.get('description')
         price = float(request.form.get('price'))
@@ -441,6 +463,7 @@ def book_gift():
         mimetype = image.mimetype if image else None
 
         gift = GiftBooking(
+            gift_name=gift_name,  # <-- Include in object
             image_data=image_data,
             image_mimetype=mimetype,
             description=description,
@@ -469,6 +492,7 @@ def gift_image(gift_id):
 def add_gift():
     if request.method == 'POST':
         file = request.files.get('image')
+        gift_name = request.form.get('gift_name')  # <-- NEW
 
         # Image handling
         if file and file.filename != '':
@@ -485,6 +509,7 @@ def add_gift():
             return "Invalid input: price must be a number and amount must be an integer.", 400
 
         new_gift = GiftBooking(
+            gift_name=gift_name,  # <-- NEW
             image_data=image_data,
             image_mimetype=mimetype,
             description=request.form['description'],
@@ -502,6 +527,7 @@ def edit_gift(gift_id):
     gift = GiftBooking.query.get_or_404(gift_id)
 
     if request.method == 'POST':
+        gift.gift_name = request.form.get('gift_name')  # <-- NEW
         gift.description = request.form.get('description')
         try:
             gift.price = abs(float(request.form.get('price')))
@@ -545,6 +571,36 @@ def delete_gift(gift_id):
     db.session.commit()
     return jsonify(success=True)
 
+@app.route('/get-booked-data')
+def get_booked_data():
+    booked_items = Booked.query.all()
+    result = [{
+        'id': b.id,
+        'gift_name': b.gift_name,  # ✅ Add this line
+        'description': b.description,
+        'price': b.price,
+        'quantity': b.quantity,
+        'datetime': b.datetime.strftime("%Y-%m-%d %H:%M"),
+        'customer_name': b.customer_name,
+        'status': b.status
+    } for b in booked_items]
+    return jsonify(result)
+
+@app.route('/update-booked-status/<int:booked_id>', methods=['POST'])
+def update_booked_status(booked_id):
+    data = request.get_json()
+    new_status = data.get('status')
+    booked_item = Booked.query.get(booked_id)
+    if booked_item:
+        booked_item.status = new_status
+        db.session.commit()
+        return jsonify({'success': True})
+    return jsonify({'success': False}), 404
+
+@app.route('/buy-stock')
+def buy_stock():
+    # Fetch products that can be restocked or logic for suppliers
+    return render_template('buy_stock.html')
 
 
 @app.route('/logout')

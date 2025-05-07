@@ -91,6 +91,10 @@
                 <td><input type="file" name="image" id="image"></td>
             </tr>
             <tr>
+                <td><label for="gift_name">Gift Name:</label></td>
+                <td><input type="text" name="gift_name" id="gift_name" required></td>
+            </tr>            
+            <tr>
                 <td><label for="description">Description:</label></td>
                 <td><textarea name="description" id="description" required></textarea></td>
             </tr>
@@ -102,7 +106,7 @@
                 <td><label for="amount">Amount:</label></td>
                 <td><input type="number" min="0" name="amount" id="amount" required></td>
             </tr>
-            
+            <tr> <!-- ✅ FIXED: Wrap submit button inside a proper <tr> -->
                 <td colspan="2" style="text-align: right;">
                     <button type="submit" class="submit-btn">Submit</button>
                 </td>
@@ -124,7 +128,6 @@
     document.getElementById('price').addEventListener('keydown', preventNegative);
     document.getElementById('amount').addEventListener('keydown', preventNegative);
 </script>
-
 
 </body>
 </html>
