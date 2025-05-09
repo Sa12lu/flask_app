@@ -1,5 +1,7 @@
 import os
 import io
+import base64
+from markupsafe import Markup  # ✅ CORRECT
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime
@@ -84,6 +86,24 @@ class CustUser(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
+
+class Stock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    image_data = db.Column(db.LargeBinary, nullable=True)  # Optional image storage
+    image_mimetype = db.Column(db.String(50))
+    quantity = db.Column(db.Integer, default=0)
+
+class BuyStock(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    product_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    datetime = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 with app.app_context():
     db.create_all()
@@ -599,8 +619,64 @@ def update_booked_status(booked_id):
 
 @app.route('/buy-stock')
 def buy_stock():
-    # Fetch products that can be restocked or logic for suppliers
-    return render_template('buy_stock.html')
+    stocks = Stock.query.all()
+    return render_template('buy_stock.html', stocks=stocks)
+
+@app.route('/stock-image/<int:stock_id>')
+def stock_image(stock_id):
+    stock_item = Stock.query.get_or_404(stock_id)
+    if stock_item.image_data:
+        return Response(stock_item.image_data, mimetype=stock_item.image_mimetype)
+    return '', 404
+
+@app.route('/add-stock', methods=['GET', 'POST'])
+def add_stock():
+    if request.method == 'POST':
+        product_name = request.form['product_name']
+        description = request.form['description']
+        price = float(request.form['price'])
+        image_file = request.files['image']
+        image_data = image_file.read() if image_file else None
+        mimetype = image_file.mimetype if image_file else None
+
+        new_product = Stock(
+            product_name=product_name,
+            description=description,
+            price=price,
+            image_data=image_data,
+            image_mimetype=mimetype,
+            quantity=0  # Default or set from form if needed
+        )
+        db.session.add(new_product)
+        db.session.commit()
+        return redirect(url_for('buy_stock'))
+
+    return render_template('add_stock.html')
+
+@app.template_filter('b64encode')
+def b64encode_filter(data):
+    return Markup(base64.b64encode(data).decode('utf-8')) if data else ''
+
+@app.route('/buy-stock/<int:product_id>', methods=['POST'])
+def buy_stock_action(product_id):
+    stock = Stock.query.get_or_404(product_id)
+    quantity = int(request.form.get('quantity', 0))
+
+    if quantity <= 0:
+        return jsonify({'status': 'error', 'message': 'Quantity must be more than 0'})
+
+    stock.quantity -= quantity
+
+    purchase = BuyStock(
+        product_name=stock.product_name,
+        description=stock.description,
+        price=stock.price,
+        quantity=quantity
+    )
+    db.session.add(purchase)
+    db.session.commit()
+    return jsonify({'status': 'success'})
+
 
 
 @app.route('/logout')
