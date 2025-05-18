@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -12,10 +12,9 @@
         }
 
         .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            text-align: center;
             margin-bottom: 30px;
+            position: relative;
         }
 
         h1 {
@@ -24,6 +23,10 @@
         }
 
         .add-product-btn {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
             background-color: #28a745;
             color: white;
             padding: 10px 18px;
@@ -82,101 +85,118 @@
         }
 
         #popup-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: rgba(0,0,0,0.4);
-        z-index: 999;
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4);
+            z-index: 999;
+        }
+
+        #popup {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 1px solid #ccc;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            z-index: 1000;
         }
     </style>
-<script>
-    function openModal(productId) {
-        document.getElementById('popup').style.display = 'block';
-        document.getElementById('popup-overlay').style.display = 'block';
-        document.getElementById('product-id').value = productId;
-    }
+    <script>
+        function openModal(productId) {
+            document.getElementById('popup').style.display = 'block';
+            document.getElementById('popup-overlay').style.display = 'block';
+            document.getElementById('product-id').value = productId;
+        }
 
-    function closeModal() {
-        document.getElementById('popup').style.display = 'none';
-        document.getElementById('popup-overlay').style.display = 'none';
-    }
+        function closeModal() {
+            document.getElementById('popup').style.display = 'none';
+            document.getElementById('popup-overlay').style.display = 'none';
+        }
 
-    function submitBuyForm() {
-        const productId = document.getElementById('product-id').value;
-        const quantity = document.getElementById('quantity').value;
+        function submitBuyForm() {
+            const productId = document.getElementById('product-id').value;
+            const quantity = parseInt(document.getElementById('quantity').value);
 
-        fetch(`/buy-stock/${productId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: `quantity=${encodeURIComponent(quantity)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === "success") {
-                alert("Purchase successful!");
-                location.reload();
-            } else {
-                alert(data.message || "Purchase failed!");
+            if (isNaN(quantity) || quantity <= 0) {
+                alert("Please enter a valid positive quantity.");
+                return;
             }
-        });
-    }
-</script>
-    
+
+            fetch(`/buy-stock/${productId}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `quantity=${encodeURIComponent(quantity)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === "success") {
+                    alert("Purchase successful!");
+                    location.reload();
+                } else {
+                    alert(data.message || "Purchase failed!");
+                }
+            });
+        }
+    </script>
 </head>
 <body>
 
-    <div class="header">
-        <h1>Buy Stock</h1>
-        <a href="{{ url_for('add_stock') }}" class="add-product-btn">+ Add Product</a>
+<div class="header">
+    <h1>Buy Stock</h1>
+    <a href="{{ url_for('add_stock') }}" class="add-product-btn">+ Add Product</a>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Image</th>
+            <th>Product Name</th>
+            <th>Description</th>
+            <th>Price (RM)</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in stocks %}
+        <tr>
+            <td>
+                {% if product.image_data %}
+                    <img src="data:image/jpeg;base64,{{ product.image_data|b64encode }}" alt="Product Image">
+                {% else %}
+                    <div class="no-image">No image found</div>
+                {% endif %}
+            </td>
+            <td>{{ product.product_name }}</td>
+            <td>{{ product.description }}</td>
+            <td>RM{{ product.price }}</td>
+            <td>
+                <button class="buy-btn" onclick="openModal({{ product.id }})">Buy</button>
+                <a href="{{ url_for('edit_stock', stock_id=product.id) }}" style="background-color: #ffc107; color:white; padding:6px 14px; border-radius:4px; text-decoration:none; margin-left:5px;">Edit</a>
+                <form action="{{ url_for('delete_stock', stock_id=product.id) }}" method="POST" style="display:inline;">
+                    <button type="submit" onclick="return confirm('Are you sure you want to delete this product?')" style="background-color: #dc3545; color:white; padding:6px 14px; border:none; border-radius:4px; margin-left:5px;">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Modal Overlay and Popup -->
+<div id="popup-overlay" onclick="closeModal()"></div>
+
+<div id="popup">
+    <h3>Enter Quantity</h3>
+    <input type="hidden" id="product-id">
+    <input type="number" id="quantity" min="1" placeholder="Quantity" style="padding:5px; width:100%; margin-bottom:10px;">
+    <div style="text-align:right;">
+        <button onclick="submitBuyForm()" style="background-color:#28a745; color:white; border:none; padding:6px 12px; margin-right:10px;">Buy</button>
+        <button onclick="closeModal()" style="background-color:#ccc; border:none; padding:6px 12px;">Cancel</button>
     </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Image</th>
-                <th>Product Name</th>
-                <th>Description</th>
-                <th>Price (RM)</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for product in stocks %}
-            <tr>
-                <td>
-                    {% if product.image_data %}
-                        <img src="data:image/jpeg;base64,{{ product.image_data|b64encode }}" alt="Product Image">
-                    {% else %}
-                        <div class="no-image">No image found</div>
-                    {% endif %}
-                </td>
-                <td>{{ product.product_name }}</td>
-                <td>{{ product.description }}</td>
-                <td>RM{{ product.price }}</td>
-                <td>
-                    <form action="{{ url_for('buy_stock_action', product_id=product.id) }}" method="POST">
-                        <button type="button" class="buy-btn" onclick="openModal({{ product.id }})">Buy</button>
-                    </form>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <!-- Popup Modal -->
-    <div id="popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%);
-         background-color:white; padding:20px; border:1px solid #ccc; box-shadow:0 0 10px rgba(0,0,0,0.3); z-index:1000;">
-        <h3>Enter Quantity</h3>
-        <input type="hidden" id="product-id">
-        <input type="number" id="quantity" min="1" placeholder="Quantity" style="padding:5px; width:100%; margin-bottom:10px;">
-        <div style="text-align:right;">
-            <button onclick="submitBuyForm()" style="background-color:#28a745; color:white; border:none; padding:6px 12px; margin-right:10px;">Buy</button>
-            <button onclick="closeModal()" style="background-color:#ccc; border:none; padding:6px 12px;">Cancel</button>
-        </div>
-    </div>
-
-    <div id="popup-overlay" onclick="closeModal()"></div>
+</div>
 
 </body>
 </html>

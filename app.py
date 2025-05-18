@@ -80,7 +80,9 @@ class Booked(db.Model):
     customer_name = db.Column(db.String(150), nullable=False)
     customer_id = db.Column(db.Integer, db.ForeignKey('cust_user.id'))  
     status = db.Column(db.String(50), default='Pending')
-    
+    notified = db.Column(db.Boolean, default=False)
+
+   
 class CustUser(db.Model):
     __tablename__ = 'cust_user'
     id = db.Column(db.Integer, primary_key=True)
@@ -94,13 +96,15 @@ class Stock(db.Model):
     price = db.Column(db.Float, nullable=False)
     image_data = db.Column(db.LargeBinary, nullable=True)  # Optional image storage
     image_mimetype = db.Column(db.String(50))
-    quantity = db.Column(db.Integer, default=0)
+    #quantity = db.Column(db.Integer, default=0)
 
 class BuyStock(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     product_name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    image_data = db.Column(db.LargeBinary, nullable=True)  # Optional image storage
+    image_mimetype = db.Column(db.String(50))
     quantity = db.Column(db.Integer, nullable=False)
     datetime = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -645,7 +649,7 @@ def add_stock():
             price=price,
             image_data=image_data,
             image_mimetype=mimetype,
-            quantity=0  # Default or set from form if needed
+            #quantity=0  # Default or set from form if needed
         )
         db.session.add(new_product)
         db.session.commit()
@@ -653,31 +657,59 @@ def add_stock():
 
     return render_template('add_stock.html')
 
-@app.template_filter('b64encode')
-def b64encode_filter(data):
-    return Markup(base64.b64encode(data).decode('utf-8')) if data else ''
-
 @app.route('/buy-stock/<int:product_id>', methods=['POST'])
 def buy_stock_action(product_id):
     stock = Stock.query.get_or_404(product_id)
-    quantity = int(request.form.get('quantity', 0))
+
+    try:
+        quantity = int(request.form.get('quantity', 0))
+    except (ValueError, TypeError):
+        return jsonify({'status': 'error', 'message': 'Quantity must be a valid number'})
 
     if quantity <= 0:
         return jsonify({'status': 'error', 'message': 'Quantity must be more than 0'})
-
-    stock.quantity -= quantity
 
     purchase = BuyStock(
         product_name=stock.product_name,
         description=stock.description,
         price=stock.price,
-        quantity=quantity
+        quantity=quantity,
+        image_data=stock.image_data,
+        image_mimetype=stock.image_mimetype
     )
     db.session.add(purchase)
     db.session.commit()
+
     return jsonify({'status': 'success'})
 
+@app.route('/edit-stock/<int:stock_id>', methods=['GET', 'POST'])
+def edit_stock(stock_id):
+    stock = Stock.query.get_or_404(stock_id)
+    if request.method == 'POST':
+        stock.product_name = request.form['product_name']
+        stock.description = request.form['description']
+        stock.price = float(request.form['price'])
 
+        image_file = request.files['image']
+        if image_file and image_file.filename != '':
+            stock.image_data = image_file.read()
+            stock.image_mimetype = image_file.mimetype
+
+        db.session.commit()
+        return redirect(url_for('buy_stock'))
+
+    return render_template('edit_stock.html', stock=stock)
+
+@app.route('/delete-stock/<int:stock_id>', methods=['POST'])
+def delete_stock(stock_id):
+    stock = Stock.query.get_or_404(stock_id)
+    db.session.delete(stock)
+    db.session.commit()
+    return redirect(url_for('buy_stock'))
+
+@app.template_filter('b64encode')
+def b64encode_filter(data):
+    return Markup(base64.b64encode(data).decode('utf-8')) if data else ''
 
 @app.route('/logout')
 def logout():
