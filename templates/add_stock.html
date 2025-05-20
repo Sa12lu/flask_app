@@ -86,8 +86,18 @@
             <label for="description">Description:</label>
             <textarea id="description" name="description" rows="3" required></textarea>
 
-            <label for="price">Price (RM):</label>
-            <input type="number" id="price" name="price" step="0.01" required>
+    <label for="price">Price (RM):</label>
+    <input 
+        type="number" 
+        id="price" 
+        name="price" 
+        step="0.01" 
+        min="0.01" 
+        required 
+        oninput="validatePrice()"
+    >
+    <small id="price-warning" style="color: red; display: none;">Please enter a positive price (greater than 0).</small>
+
 
             <label for="image">Product Image:</label>
             <input type="file" id="image" name="image">
@@ -96,6 +106,28 @@
         </form>
         <a href="{{ url_for('buy_stock') }}" class="back-link">← Back to Buy Stock</a>
     </div>
+
+    <script>
+    function validatePrice() {
+        const priceInput = document.getElementById("price");
+        const warning = document.getElementById("price-warning");
+        const value = priceInput.value;
+
+        if (value === "") {
+            warning.style.display = "none";
+            return;
+        }
+
+        const floatVal = parseFloat(value);
+    
+        if (isNaN(floatVal) || floatVal <= 0) {
+            warning.style.display = "block";
+        } else {
+            warning.style.display = "none";
+        }
+    }
+    </script>
+
 
 </body>
 </html>
