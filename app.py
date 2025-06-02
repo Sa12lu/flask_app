@@ -43,6 +43,7 @@ class Product(db.Model):
     quantity = db.Column(db.Integer, nullable=False, default=0)
     priority = db.Column(db.String(10), nullable=False, default='Low')
     image_filename = db.Column(db.String(100), nullable=True)
+    quantity_updated_at = db.Column(db.DateTime, nullable=True)  # New column
 
 class SaleProduct(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -107,6 +108,34 @@ class BuyStock(db.Model):
     image_mimetype = db.Column(db.String(50))
     quantity = db.Column(db.Integer, nullable=False)
     datetime = db.Column(db.DateTime, default=datetime.utcnow)
+
+class RecordSk(db.Model):
+    __tablename__ = 'record_sk'  # <-- This must match your database table
+    id = db.Column(db.Integer, primary_key=True)
+    product_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    image_data = db.Column(db.LargeBinary, nullable=True)
+    image_mimetype = db.Column(db.String(50))
+    quantity = db.Column(db.Integer, nullable=False)
+    datetime = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.String(10), default='Pending')  # Accept / Reject / Pending
+    note = db.Column(db.Text, nullable=True)  # add notes
+    buy_stock_id = db.Column(db.Integer, db.ForeignKey('buy_stock.id'), unique=True)
+    # New column to track whether the gift is newly added
+    is_new = db.Column(db.Boolean, default=True)
+
+class ListStock(db.Model):
+    __tablename__ = 'list_stock'
+    id = db.Column(db.Integer, primary_key=True)
+    product_name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(255), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    recorded_datetime = db.Column(db.DateTime, nullable=False)  # renamed from 'datetime'
+    checklist_datetime = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 
 
 with app.app_context():
@@ -210,13 +239,15 @@ def add_product():
                     image_filename = secure_filename(file.filename)
                     file.save(os.path.join(app.config['UPLOAD_FOLDER'], image_filename))
 
+                # ✅ Set quantity_updated_at if quantity > 0
                 new_product = Product(
                     name=name,
                     type=product_type,
                     description=description,
                     quantity=quantity,
                     priority=priority,
-                    image_filename=image_filename
+                    image_filename=image_filename,
+                    quantity_updated_at=datetime.utcnow() if quantity > 0 else None
                 )
                 db.session.add(new_product)
                 db.session.commit()
@@ -241,7 +272,14 @@ def edit_product(product_id):
             product.name = request.form['name']
             product.type = request.form.get('type', 'Uncategorized')
             product.description = request.form.get('description', '')
-            product.quantity = int(request.form['quantity'])
+
+            # Get the new quantity from form
+            new_quantity = int(request.form['quantity'])
+            # Check if the quantity has changed
+            if product.quantity != new_quantity:
+                product.quantity = new_quantity
+                product.quantity_updated_at = datetime.utcnow()  # Update timestamp if changed
+
             product.priority = request.form.get('priority', 'Low')
 
             file = request.files.get('image')
@@ -287,12 +325,12 @@ def add_quantity(product_id):
                 flash('Product not found.', 'danger')
                 return redirect(url_for('inventory'))
 
-
             amount = int(request.form['amount'])
             if amount < 0:
                 flash('Invalid amount. Please enter a positive number.', 'danger')
             else:
                 product.quantity += amount
+                product.quantity_updated_at = datetime.now()  # Update time here
                 db.session.commit()
                 flash(f'Successfully added {amount} to {product.name}.', 'success')
         except ValueError:
@@ -304,7 +342,6 @@ def add_quantity(product_id):
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
 
-
 @app.route('/subtract-quantity/<int:product_id>', methods=['POST'])
 def subtract_quantity(product_id):
     if 'username' in session:
@@ -314,7 +351,6 @@ def subtract_quantity(product_id):
                 flash('Product not found.', 'danger')
                 return redirect(url_for('inventory'))
 
-
             amount = int(request.form['amount'])
             if amount < 0:
                 flash('Invalid amount. Please enter a positive number.', 'danger')
@@ -322,6 +358,7 @@ def subtract_quantity(product_id):
                 flash('Insufficient stock.', 'danger')
             else:
                 product.quantity -= amount
+                product.quantity_updated_at = datetime.now()  # Update time here
                 db.session.commit()
                 flash(f'Successfully subtracted {amount} from {product.name}.', 'success')
         except ValueError:
@@ -621,10 +658,25 @@ def update_booked_status(booked_id):
         return jsonify({'success': True})
     return jsonify({'success': False}), 404
 
+
 @app.route('/buy-stock')
 def buy_stock():
     stocks = Stock.query.all()
-    return render_template('buy_stock.html', stocks=stocks)
+
+    recordsk_items = RecordSk.query.order_by(RecordSk.datetime.desc()).all()  
+    has_new_gifts = RecordSk.query.filter_by(is_new=True).count() > 0       
+    # get the BuyStock records
+    buystock_items = BuyStock.query.order_by(BuyStock.datetime.desc()).all()  
+
+    return render_template(
+        'buy_stock.html',
+        stocks=stocks,
+        recordsk_items=recordsk_items,
+        has_new_gifts=has_new_gifts,
+        buystock_items=buystock_items  # Pass to the template
+    )
+
+
 
 @app.route('/stock-image/<int:stock_id>')
 def stock_image(stock_id):
@@ -659,28 +711,23 @@ def add_stock():
 
 @app.route('/buy-stock/<int:product_id>', methods=['POST'])
 def buy_stock_action(product_id):
-    stock = Stock.query.get_or_404(product_id)
+    quantity = int(request.form['quantity'])
+    stock = Stock.query.get(product_id)
 
-    try:
-        quantity = int(request.form.get('quantity', 0))
-    except (ValueError, TypeError):
-        return jsonify({'status': 'error', 'message': 'Quantity must be a valid number'})
-
-    if quantity <= 0:
-        return jsonify({'status': 'error', 'message': 'Quantity must be more than 0'})
-
-    purchase = BuyStock(
+    # Create BuyStock entry only
+    buy_stock = BuyStock(
         product_name=stock.product_name,
         description=stock.description,
         price=stock.price,
-        quantity=quantity,
         image_data=stock.image_data,
-        image_mimetype=stock.image_mimetype
+        image_mimetype=stock.image_mimetype,
+        quantity=quantity
     )
-    db.session.add(purchase)
+    db.session.add(buy_stock)
     db.session.commit()
 
-    return jsonify({'status': 'success'})
+    return jsonify({"status": "success"})
+
 
 @app.route('/edit-stock/<int:stock_id>', methods=['GET', 'POST'])
 def edit_stock(stock_id):
@@ -711,6 +758,78 @@ def delete_stock(stock_id):
 def b64encode_filter(data):
     return Markup(base64.b64encode(data).decode('utf-8')) if data else ''
 
+@app.route('/clear-new-stock', methods=['POST'])
+def clear_new_stock():
+    for record in RecordSk.query.filter_by(is_new=True).all():
+        record.is_new = False
+    db.session.commit()
+    return '', 204
+
+
+@app.route('/stock-management')
+def stock_management():
+    # Example of querying all stock items from RecordSk
+    recordsk_items = RecordSk.query.all()  # or appropriate logic
+    has_new_gifts = ...  # your logic
+
+    return render_template(
+        'your_template.html',
+        recordsk_items=recordsk_items,
+        has_new_gifts=has_new_gifts
+    )
+
+
+@app.route('/stock-store')
+def stock_store():
+    buystock_items = RecordSk.query.order_by(RecordSk.datetime.desc()).all()
+    return render_template('buy_stock.html', buystock_items=buystock_items)
+
+# New Route for Stock Checklist (RecordSk with status 'Accept')
+@app.route('/stock-checklist')
+def stock_checklist():
+    accepted_records = RecordSk.query.filter_by(status='Accept').order_by(RecordSk.datetime.desc()).all()
+    list_stock_ids = {ls.id for ls in ListStock.query.all()}  # Use IDs to track checked items
+
+    checklist = [
+        {
+            'id': record.id,  # Include unique ID
+            'product_name': record.product_name,
+            'quantity': record.quantity,
+            'price': record.price,
+            'checked': record.id in list_stock_ids  # Use ID to check if it's marked
+        } for record in accepted_records
+    ]
+    return jsonify(checklist)
+
+
+
+@app.route('/check-stock-item', methods=['POST'])
+def check_stock_item():
+    data = request.get_json()
+    record_id = data.get('id')  # Use unique ID instead of product name
+
+    # Find the RecordSk entry by id
+    record = RecordSk.query.filter_by(id=record_id, status='Accept').first()
+    if record:
+        # Check if already in ListStock
+        existing_entry = ListStock.query.filter_by(id=record.id).first()
+        if not existing_entry:
+            new_entry = ListStock(
+                id=record.id,  # Use the same ID
+                product_name=record.product_name,
+                description=record.description,
+                price=record.price,
+                quantity=record.quantity,
+                recorded_datetime=record.datetime,
+                checklist_datetime=datetime.utcnow()
+            )
+            db.session.add(new_entry)
+            db.session.commit()
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "Record not found"}), 404
+
+
+
 @app.route('/logout')
 def logout():
     session.pop('username', None)
@@ -720,3 +839,4 @@ def logout():
 if __name__ == "__main__":
     print("Starting Flask app...")
     app.run(host="0.0.0.0", port=5001, debug=True)
+

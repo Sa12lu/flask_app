@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Management</title>
@@ -11,20 +13,23 @@
             padding: 20px;
         }
 
+
         .header {
             text-align: center;
             margin-bottom: 30px;
             position: relative;
         }
 
+
         h1 {
             color: #007bff;
             margin: 0;
         }
 
+
         .add-product-btn {
             position: absolute;
-            right: 0;
+            left: 0;
             top: 50%;
             transform: translateY(-50%);
             background-color: #28a745;
@@ -36,15 +41,20 @@
             font-size: 14px;
         }
 
+
+
+
         .add-product-btn:hover {
             background-color: #218838;
         }
+
 
         table {
             width: 100%;
             border-collapse: collapse;
             background-color: white;
         }
+
 
         th, td {
             padding: 12px;
@@ -53,10 +63,12 @@
             vertical-align: middle;
         }
 
+
         th {
             background-color: #007bff;
             color: white;
         }
+
 
         td img {
             max-width: 100px;
@@ -65,6 +77,7 @@
             display: block;
             margin: auto;
         }
+
 
         .buy-btn {
             background-color: #28a745;
@@ -75,14 +88,17 @@
             cursor: pointer;
         }
 
+
         .buy-btn:hover {
             background-color: #218838;
         }
+
 
         .no-image {
             color: #999;
             text-align: center;
         }
+
 
         #popup-overlay {
             display: none;
@@ -92,6 +108,7 @@
             background: rgba(0,0,0,0.4);
             z-index: 999;
         }
+
 
         #popup {
             display: none;
@@ -104,6 +121,224 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             z-index: 1000;
         }
+
+        .red-dot {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            z-index: 1001;
+        }
+        .top-right-icons {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 15px;
+            z-index: 1001;
+        }
+
+        .notification-icon,
+        .history-icon {
+            cursor: pointer;
+            font-size: 24px;
+            position: relative;
+        }
+
+
+/* Colored status boxes */
+.status-box {
+    width: 90%;
+    margin: 0 auto;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    position: relative;
+    transition: 0.3s ease;
+}
+
+/* Accept - green */
+.status-box.accept {
+    background-color: #e6f4ea;
+    color: #1e4620;
+}
+
+/* Reject - red */
+.status-box.reject {
+    background-color: #fbeaea;
+    color: #a1201d;
+}
+
+/* Pending - yellow */
+.status-box.pending {
+    background-color: #fff9e5;
+    color: #8a6d3b;
+}
+
+/* Cancel button inside each box */
+.status-box button.remove-entry {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333;
+}
+
+.notification-popup-container {
+  display: none;              /* default hidden */
+  flex-direction: column;     /* column layout when flex */
+  justify-content: flex-start;
+  align-items: stretch;
+  position: fixed;            /* fixed in viewport */
+  top: 10%;
+  left: 25%;
+  width: 50%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  z-index: 3000;              /* above other content */
+  padding: 20px;
+}
+
+.notification-popup-container.show {
+  display: flex;  /* when toggled open */
+}
+
+
+
+.notification-popup-container h2 {
+    text-align: center;
+    color: #333;
+    font-weight: 600;
+    font-size: 1.8em;
+    margin: 0 auto 10px auto; /* Reduced bottom margin */
+    word-break: break-word;
+}
+
+
+.notification-popup-container .close-popup {
+    position: absolute;
+    top: 8px; /* moved closer to top */
+    right: 8px; /* moved closer to right edge */
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
+
+.popup-window {
+    position: fixed;
+    top: 60px;
+    right: 20px;
+    width: 400px;
+    max-height: 80vh;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 10px 0;
+    overflow-y: auto;
+    z-index: 2000;
+}
+
+.history-entry {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+.history-entry:last-child {
+    border-bottom: none;
+}
+
+.close-popup {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #333;
+}
+
+.top-right-icons .stock-record-icon {
+  cursor: pointer;
+  font-size: 24px;
+  position: relative;
+}
+
+.top-right-icons .stock-checklist-icon {
+  cursor: pointer;
+  font-size: 24px;
+  position: relative;
+}
+
+.stock-checklist-popup {
+  position: absolute;
+  top: 50px; 
+  right: 10px;
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  padding: 16px;
+  z-index: 1000;
+}
+
+.stock-checklist-popup h3 {
+  margin-top: 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.stock-checklist-popup ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.stock-checklist-popup ul li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 4px;
+}
+
+.stock-checklist-popup ul li:last-child {
+  border-bottom: none;
+}
+
+.stock-checklist-popup .item-name {
+  font-weight: bold;
+}
+
+.stock-checklist-popup .item-quantity,
+.stock-checklist-popup .item-price {
+  font-size: 14px;
+  color: #555;
+}
+
+.stock-checklist-popup input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.stock-checklist-popup label {
+  cursor: pointer;
+}
+
     </style>
     <script>
         function openModal(productId) {
@@ -112,24 +347,30 @@
             document.getElementById('product-id').value = productId;
         }
 
+
         function closeModal() {
             document.getElementById('popup').style.display = 'none';
             document.getElementById('popup-overlay').style.display = 'none';
         }
 
+
         function submitBuyForm() {
             const productId = document.getElementById('product-id').value;
             const quantity = parseInt(document.getElementById('quantity').value);
+
 
             if (isNaN(quantity) || quantity <= 0) {
                 alert("Please enter a valid positive quantity.");
                 return;
             }
 
+
             fetch(`/buy-stock/${productId}`, {
+
                 method: "POST",
                 headers: { "Content-Type": "application/x-www-form-urlencoded" },
                 body: `quantity=${encodeURIComponent(quantity)}`
+
             })
             .then(response => response.json())
             .then(data => {
@@ -141,14 +382,224 @@
                 }
             });
         }
+
+
+function toggleNotificationPopup() {
+    const popup = document.getElementById('notificationPopup');
+    const dot = document.getElementById('notif-dot');
+
+    popup.classList.toggle('show');
+
+    if (dot) {
+        dot.style.display = 'none';  // Hide the red dot immediately
+        fetch('/clear-new-stock', { method: 'POST' });  // Mark notifications as seen
+    }
+}
+
+
+        function toggleHistoryPopup() {
+            const popup = document.getElementById("historyPopup");
+            popup.style.display = (popup.style.display === "none" || popup.style.display === "") ? "flex" : "none";
+        }
+
+        function toggleBuyStockPopup() {
+            const popup = document.getElementById("buyStockPopup");
+            popup.style.display = (popup.style.display === "none" || popup.style.display === "") ? "flex" : "none";
+        }
+
+function toggleStockChecklistPopup() {
+  const popup = document.getElementById('stockChecklistPopup');
+  const list = document.getElementById('stockChecklistItems');
+
+  if (popup.style.display === 'none') {
+    fetch('/stock-checklist')
+      .then(response => response.json())
+      .then(data => {
+        list.innerHTML = '';
+
+        if (data.length === 0) {
+          list.innerHTML = '<li>No accepted records.</li>';
+        } else {
+          data.forEach((item) => {
+            const checkboxId = `stock-item-${item.id}`;  // Use unique ID
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <input type="checkbox" id="${checkboxId}" value="${item.id}" ${item.checked ? 'checked disabled' : ''}>
+              <label for="${checkboxId}">
+                <span class="item-name">${item.product_name}</span> - 
+                <span class="item-quantity">${item.quantity} pcs</span> @ 
+                <span class="item-price">$${item.price.toFixed(2)}</span>
+              </label>
+            `;
+            list.appendChild(li);
+
+            const checkbox = li.querySelector('input');
+            if (!item.checked) {
+              checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                  fetch('/check-stock-item', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: item.id })  // Send unique ID
+                  })
+                  .then(response => response.json())
+                  .then(result => {
+                    if (result.status === "success") {
+                      this.disabled = true;
+                    } else {
+                      console.error('Error marking item as checked:', result.message);
+                    }
+                  })
+                  .catch(err => {
+                    console.error('Error in request:', err);
+                  });
+                }
+              });
+            }
+          });
+        }
+
+        popup.style.display = 'block';
+      })
+      .catch(error => {
+        console.error('Error fetching stock checklist:', error);
+      });
+  } else {
+    popup.style.display = 'none';
+  }
+}
+
+
+
+
     </script>
 </head>
 <body>
 
+<!-- Fixed Top-Right Icon Container -->
+<div class="top-right-icons">
+  <!-- Notification Icon -->
+  <div class="notification-icon" onclick="toggleNotificationPopup()">
+    <i class="fas fa-bell" style="color: #007bff;"></i>
+    {% if has_new_gifts %}
+      <span id="notif-dot" class="red-dot"></span>
+    {% endif %}
+  </div>
+
+  <!-- History Icon -->
+  <div class="history-icon" onclick="toggleHistoryPopup()">
+    <i class="fas fa-history" style="color: #007bff;"></i>
+  </div>
+
+  <!-- Buy Stock Record Icon -->
+  <div class="stock-record-icon" onclick="toggleBuyStockPopup()">
+    <i class="fas fa-file" style="color: #007bff;"></i>
+  </div>
+
+  <!-- Stock Checklist Icon -->
+  <div class="stock-checklist-icon" onclick="toggleStockChecklistPopup()">
+    <i class="fas fa-check-square" style="color: #007bff;"></i>  <!-- Green icon for checklist -->
+  </div>
+</div>
+
+
+
+<!-- Original Header -->
 <div class="header">
     <h1>Buy Stock</h1>
     <a href="{{ url_for('add_stock') }}" class="add-product-btn">New Product</a>
 </div>
+
+<!-- Notification Popup -->
+<div id="notificationPopup" class="notification-popup-container">
+    <!-- Close Button for the entire popup -->
+    <button onclick="toggleNotificationPopup()" class="close-popup">&times;</button>
+
+    <!-- Title -->
+    <h2>Stock Updates</h2>
+
+    {% if recordsk_items %}
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            {% for item in recordsk_items %}
+                {% set status_class = item.status|lower %}
+                <div class="status-box {{ status_class }}">
+                    <!-- Cancel button for this box only -->
+                    <button class="remove-entry" onclick="this.parentElement.remove()">&times;</button>
+                    <p><strong>Product Name:</strong> {{ item.product_name }}</p>
+                    <p><strong>Description:</strong> {{ item.description }}</p>
+                    <p><strong>Price:</strong> RM{{ '%.2f'|format(item.price) }}</p>
+                    <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+                    <p><strong>Status:</strong> {{ item.status }}</p>
+                    <p><strong>Note:</strong> {{ item.note if item.note else 'No note provided.' }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="text-align:center; color:#888;">There is no stock yet.</p>
+    {% endif %}
+</div>
+
+
+
+<!-- History Popup -->
+<div id="historyPopup" class="popup-window" style="display: none; flex-direction: column;">
+    <!-- Popup Header -->
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px;">
+        <h2 style="margin: 0;">Stock History</h2>
+        <button class="close-popup" onclick="toggleHistoryPopup()">&times;</button>
+    </div>
+
+    <!-- History List -->
+    {% if recordsk_items %}
+        <div style="padding: 0 20px; display: flex; flex-direction: column; gap: 20px;">
+            {% for item in recordsk_items if item.status != 'Pending' %}
+                <div class="history-entry">
+                    <p><strong>Product Name:</strong> {{ item.product_name }}</p>
+                    <p><strong>Description:</strong> {{ item.description }}</p>
+                    <p><strong>Price:</strong> RM{{ '%.2f'|format(item.price) }}</p>
+                    <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+                    <p><strong>Status:</strong> {{ item.status }}</p>
+                    <p><strong>Note:</strong> {{ item.note if item.note else 'No note provided.' }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p style="text-align:center; color:#888; padding: 0 20px;">There is no history yet.</p>
+    {% endif %}
+</div>
+
+<!-- Buy Stock Record Popup -->
+<div id="buyStockPopup" class="notification-popup-container" style="display: none;">
+  <!-- Close Button -->
+  <button onclick="toggleBuyStockPopup()" class="close-popup">&times;</button>
+  <h2>Record of Stock Buy</h2>
+
+  {% if buystock_items %}
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      {% for item in buystock_items %}
+        <div class="status-box" style="background-color: #f4f6f8; color: #333; border-radius: 12px; padding: 16px;">
+          <p><strong>Product Name:</strong> {{ item.product_name }}</p>
+          <p><strong>Description:</strong> {{ item.description }}</p>
+          <p><strong>Price:</strong> RM{{ '%.2f'|format(item.price) }}</p>
+          <p><strong>Quantity:</strong> {{ item.quantity }}</p>
+          <p><strong>Date/Time:</strong> {{ item.datetime.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="text-align: center; color: #888;">No stock buy records found.</p>
+  {% endif %}
+</div>
+
+<!-- Stock Checklist Popup -->
+<div id="stockChecklistPopup" class="stock-checklist-popup" style="display: none;">
+  <h3>Accepted Stock List</h3>
+  <ul id="stockChecklistItems">
+    <!-- Dynamically populated list items with checkboxes -->
+  </ul>
+  <button onclick="toggleStockChecklistPopup()">Close</button>
+</div>
+
 
 <table>
     <thead>
@@ -186,8 +637,10 @@
     </tbody>
 </table>
 
+
 <!-- Modal Overlay and Popup -->
 <div id="popup-overlay" onclick="closeModal()"></div>
+
 
 <div id="popup">
     <h3>Enter Quantity</h3>
@@ -199,5 +652,7 @@
     </div>
 </div>
 
+
 </body>
 </html>
+
