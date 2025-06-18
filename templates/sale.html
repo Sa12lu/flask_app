@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Sales</title>
@@ -19,24 +22,37 @@
 
         .top-buttons {
             display: flex;
-            justify-content: space-between;
+            justify-content: flex-end;
             margin-bottom: 15px;
+            gap: 10px;
         }
 
-        button {
-            padding: 10px;
+        .list-icon-button {
+            background: none;
+            font-size: 30px; /* Increased icon size */
+            color:  #007bff;
             border: none;
+            padding: 3px 14px;
+            border-radius: 5px;
             cursor: pointer;
         }
 
-        .list-button {
-            background-color: #007bff;
-            color: white;
+        .list-icon-button:hover {
+            background-color: #0069d9;
         }
 
         .add-button {
             background-color: #28a745;
             color: white;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .add-button:hover {
+            background-color: #218838;
         }
 
         table {
@@ -62,29 +78,64 @@
         }
 
         .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 999;
-        }
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  z-index: 999;
+}
 
-        .modal-content {
-            background: white;
-            width: 80%;
-            max-width: 700px;
-            max-height: 80vh;
-            overflow-y: auto;
-            padding: 20px;
-            border-radius: 10px;
-            position: relative;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
+.modal-content {
+  width: 100%;
+  max-width: 500px;
+  padding: 20px; /* ✅ Add this to give space inside the modal */
+  box-sizing: border-box; /* Ensures padding is included in width */
+}
+
+.modal-content input[type="number"] {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+
+.modal form button[type="submit"] {
+  background-color: #007bff;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal form button[type="submit"]:hover {
+  background-color: #0056b3;
+}
+
+.modal form button[type="button"] {
+  background-color: #6c757d;
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.modal form button[type="button"]:hover {
+  background-color: #5a6268;
+}
+
 
         .close-button {
             position: absolute;
@@ -115,7 +166,7 @@
             border: none;
             color: gray;
             font-size: 16px;
-            transform: scale(0.8); /* shrink it visually */
+            transform: scale(0.8);
             cursor: pointer;
             padding: 0;
             transition: color 0.2s ease;
@@ -125,18 +176,80 @@
             color: darkgray;
         }
 
+        .action-increase {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .action-increase:hover {
+            background-color: #0056b3;
+        }
+
+        .action-edit {
+            background-color: #ffc107;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .action-edit:hover {
+            background-color: #e0a800;
+        }
+
+        .action-delete {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .action-delete:hover {
+            background-color: #c82333;
+        }
+
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: none;
+            border: none;
+            font-size: 26px;
+            color: #007bff;
+            cursor: pointer;
+            z-index: 999;
+        }
+
+        .back-button:hover {
+            color: #4899f0;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Back to Dashboard Icon -->
+    <button class="back-button" onclick="window.location.href='{{ url_for('dashboard') }}'" title="Back to Dashboard">
+        <i class="fas fa-arrow-left"></i>
+    </button>
+
     <h1>Product Sales</h1>
 
     <div class="top-buttons">
-        <button class="list-button" onclick="openListPopup()">List</button>
+        <button class="list-icon-button" onclick="openListPopup()" title="Purchased List">
+            <i class="fas fa-list"></i>
+        </button>
         <a href="{{ url_for('add_product_sale') }}">
             <button class="add-button">Add Product</button>
         </a>
     </div>
+
 
     <table>
         <thead>
@@ -154,7 +267,7 @@
             <tr>
                 <td>{{ product.name }}</td>
                 <td>{{ product.description }}</td>
-                <td>RM{{ product.price }}</td>
+                <td>RM{{ '%.2f' | format(product.price) }}</td>
                 <td id="quantity-{{ product.id }}">{{ product.quantity }}</td>
                 <td>
                     {% if product.image_data %}
@@ -164,11 +277,11 @@
                     {% endif %}
                 </td>
                 <td>
-                    <button onclick="increaseQuantity({{ product.id }})">Increase</button>
+                    <button class="action-increase" onclick="showIncreaseModal({{ product.id }})">Increase</button>
                     <a href="{{ url_for('edit_product_sale', product_id=product.id) }}">
-                        <button style="background-color: #ffc107; color: white;">Edit</button>
+                        <button class="action-edit">Edit</button>
                     </a>
-                    <button onclick="deleteProduct({{ product.id }})" style="color: red;">Delete</button>
+                    <button class="action-delete" onclick="deleteProduct({{ product.id }})">Delete</button>
                 </td>
             </tr>
             {% else %}
@@ -179,7 +292,7 @@
         </tbody>
     </table>
 
-    <!-- Popup Modal -->
+    <!-- List Modal -->
     <div id="listPopup" class="modal">
         <div class="modal-content">
             <button class="close-button" onclick="closeListPopup()">✖</button>
@@ -208,20 +321,55 @@
         </div>
     </div>
 
+    <!-- Quantity Modal -->
+    <div id="increaseModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalProductName" style="margin-bottom: 15px;">Increase Quantity</h3>
+        <form id="increaseForm" onsubmit="submitIncrease(event)">
+        <input type="hidden" id="increaseProductId">
+        <label for="increaseAmount">Enter Amount:</label><br>
+        <input type="number" id="increaseAmount" name="amount" min="1" required style="width: 100%; padding: 8px; margin: 10px 0;"><br>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+            <button type="submit">Submit</button>
+            <button type="button" onclick="closeIncreaseModal()">Cancel</button>
+        </div>
+        </form>
+    </div>
+    </div>
+
+
     <script>
-        function increaseQuantity(productId) {
+        function showIncreaseModal(productId) {
+            document.getElementById('increaseProductId').value = productId;
+            document.getElementById('increaseAmount').value = '';
+            document.getElementById('increaseModal').style.display = 'flex';
+        }
+
+        function closeIncreaseModal() {
+            document.getElementById('increaseModal').style.display = 'none';
+        }
+
+        function submitIncrease(event) {
+            event.preventDefault();
+            const productId = document.getElementById('increaseProductId').value;
+            const amount = document.getElementById('increaseAmount').value;
+
             fetch(`/increase-sale-quantity/${productId}`, {
-                method: 'POST'
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ amount: amount })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     document.getElementById(`quantity-${productId}`).textContent = data.new_quantity;
+                    closeIncreaseModal();
                 } else {
-                    alert("Failed to increase quantity.");
+                    alert('Failed to increase quantity: ' + (data.error || 'Unknown error'));
                 }
-            })
-            .catch(error => console.error('Error:', error));
+            });
         }
 
         function deleteProduct(productId) {
@@ -254,9 +402,6 @@
                 if (!data.success) {
                     alert("Failed to update status.");
                 }
-            })
-            .catch(error => {
-                console.error("Error updating status:", error);
             });
         }
 

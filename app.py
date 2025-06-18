@@ -61,6 +61,7 @@ class PurchasedProduct(db.Model):
     status = db.Column(db.String(50), nullable=False, default="Pending")
     username = db.Column(db.String(150), nullable=False)  # Add this line
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # add NEW time date
+    sale_product_id = db.Column(db.Integer, db.ForeignKey('sale_product.id'), nullable=False)  # ✅ NEW
 
 class GiftBooking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -73,6 +74,7 @@ class GiftBooking(db.Model):
 
 class Booked(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    gift_id = db.Column(db.Integer, db.ForeignKey('gift_booking.id'), nullable=False)  # ← new line
     gift_name = db.Column(db.String(100), nullable=False)  # ← Add this line
     description = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -128,6 +130,7 @@ class RecordSk(db.Model):
 class ListStock(db.Model):
     __tablename__ = 'list_stock'
     id = db.Column(db.Integer, primary_key=True)
+    stock_id = db.Column(db.Integer, db.ForeignKey('stock.id'), nullable=False)
     product_name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(255), nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -154,12 +157,13 @@ def login():
 
         if user and check_password_hash(user.password, password):
             session['username'] = username
-            flash('Login successful!', 'success')
-            return redirect(url_for('dashboard'))
+            # Instead of flash + redirect immediately, pass the message
+            return render_template('login.html', message="Login successful!", category="success", redirect_url=url_for('dashboard'))
         else:
-            flash('Invalid credentials.', 'danger')
+            return render_template('login.html', message="Invalid credentials.", category="danger")
 
     return render_template('login.html')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -168,8 +172,7 @@ def register():
         password = request.form['password']
 
         if not username or not password:
-            flash('Username and Password are required.', 'danger')
-            return render_template('register.html')
+            return render_template('register.html', message='Username and Password are required.', category='danger')
 
         hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
         new_user = User(username=username, password=hashed_password)
@@ -177,13 +180,20 @@ def register():
         try:
             db.session.add(new_user)
             db.session.commit()
-            flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('login'))
+            return render_template(
+                'register.html',
+                message='Registration successful! Please log in.',
+                category='success',
+                redirect_url=url_for('login')
+            )
         except Exception as e:
             db.session.rollback()
-            flash(f'Error: {e}', 'danger')
+            return render_template('register.html', message=f'Error: {e}', category='danger')
 
-    return render_template('register.html')
+    # Important: Provide default message and category so the template logic works
+    return render_template('register.html', message=None, category=None)
+
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -383,14 +393,18 @@ def sale():
 # Route increase sale product quantity
 @app.route('/increase-sale-quantity/<int:product_id>', methods=['POST'])
 def increase_sale_quantity(product_id):
-    if 'username' in session:
-        product = SaleProduct.query.get(product_id)
-        if product:
-            product.quantity += 1
-            db.session.commit()
-            return jsonify({'success': True, 'new_quantity': product.quantity})
-        return jsonify({'success': False, 'error': 'Product not found'}), 404
-    return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+    product = SaleProduct.query.get_or_404(product_id)
+    data = request.get_json()
+    amount = data.get('amount', 0)
+
+    try:
+        product.quantity += int(amount)
+        db.session.commit()
+        return jsonify(success=True, new_quantity=product.quantity)
+    except Exception as e:
+        db.session.rollback()
+        return jsonify(success=False, error=str(e)), 500
+
 
 @app.route('/add-product-sale', methods=['GET', 'POST'])
 def add_product_sale():
@@ -402,17 +416,26 @@ def add_product_sale():
             quantity = request.form['quantity']
             file = request.files.get('image')
 
+
             try:
                 price = float(price)
+
+                if price < 0.01:
+                    flash('Price must be greater than zero.', 'danger')
+                    return render_template('add_product_sale.html')
+                
                 quantity = int(quantity)
+
 
                 image_data = None
                 image_mimetype = None
+
 
                 # Check if image is provided and allowed
                 if file and allowed_file(file.filename):
                     image_data = file.read()
                     image_mimetype = file.mimetype
+
 
                 # Create new product entry
                 new_product = SaleProduct(
@@ -424,22 +447,29 @@ def add_product_sale():
                     image_mimetype=image_mimetype
                 )
 
+
                 db.session.add(new_product)
                 db.session.commit()
 
+
                 flash('Product added successfully!', 'success')
                 return redirect(url_for('sale'))
+
 
             except ValueError:
                 flash('Invalid price or quantity.', 'danger')
             except Exception as e:
                 flash(f'An error occurred: {e}', 'danger')
 
+
         return render_template('add_product_sale.html')
+
 
     else:
         flash('You need to log in first.', 'warning')
         return redirect(url_for('login'))
+
+
 
 @app.route('/product-sale-image/<int:product_id>')
 def product_sale_image(product_id):
@@ -802,31 +832,37 @@ def stock_checklist():
     return jsonify(checklist)
 
 
-
 @app.route('/check-stock-item', methods=['POST'])
 def check_stock_item():
     data = request.get_json()
-    record_id = data.get('id')  # Use unique ID instead of product name
+    record_id = data.get('id')
 
-    # Find the RecordSk entry by id
     record = RecordSk.query.filter_by(id=record_id, status='Accept').first()
-    if record:
-        # Check if already in ListStock
-        existing_entry = ListStock.query.filter_by(id=record.id).first()
-        if not existing_entry:
-            new_entry = ListStock(
-                id=record.id,  # Use the same ID
-                product_name=record.product_name,
-                description=record.description,
-                price=record.price,
-                quantity=record.quantity,
-                recorded_datetime=record.datetime,
-                checklist_datetime=datetime.utcnow()
-            )
-            db.session.add(new_entry)
-            db.session.commit()
-        return jsonify({"status": "success"})
-    return jsonify({"status": "error", "message": "Record not found"}), 404
+    if not record:
+        return jsonify({"status": "error", "message": "Record not found"}), 404
+
+    # Find matching Stock entry (assuming by product_name)
+    stock = Stock.query.filter_by(product_name=record.product_name).first()
+    if not stock:
+        return jsonify({"status": "error", "message": "Stock item not found"}), 404
+
+    # Prevent duplicate entry
+    existing_entry = ListStock.query.filter_by(id=record.id).first()
+    if not existing_entry:
+        new_entry = ListStock(
+            id=record.id,  # Keep same ID
+            stock_id=stock.id,  # ✅ Link to Stock
+            product_name=record.product_name,
+            description=record.description,
+            price=record.price,
+            quantity=record.quantity,
+            recorded_datetime=record.datetime,
+            checklist_datetime=datetime.utcnow()
+        )
+        db.session.add(new_entry)
+        db.session.commit()
+
+    return jsonify({"status": "success"})
 
 
 

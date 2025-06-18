@@ -1,16 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+  <meta charset="UTF-8">
+  <title>Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --main: #007bff;
+      --bg:   #f4f8fc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg);
+    }
+
+    h1 {
+      color: var(--main);
+      text-align: center;
+      margin: 25px 0 15px;
+    }
+
+    /* ─── NAVBAR ───────────────────────── */
+    .navbar {
+        background: var(--main);
+        display: flex;
+        justify-content: center;
+        padding: 10px 0; /* identical to customer */
+    }
+
+    .navbar a {
+        color: white;
+        text-decoration: none;
+        margin: 0 10px;
+        padding: 8px 12px;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+
+    .navbar a:hover {
+      background-color: rgba(255,255,255,0.2);
+    }
+
+    /* ─── MESSAGE BOX ───────────────────────── */
+    .message-box {
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 12px;
+      background-color: #fff3cd;
+      color: #856404;
+      border-radius: 5px;
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      font-weight: bold;
+      border: 1px solid #ffeeba;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-    <h1>Welcome, worker!</h1>
+
+  <h1>Welcome, {{ username }}!</h1>
+
+  <nav class="navbar">
     <a href="{{ url_for('inventory') }}">Inventory</a>
     <a href="{{ url_for('sale') }}">Sell Product</a>
-    <a href="{{ url_for('book_gift') }}">booking</a>
-    <a href="{{ url_for('buy_stock') }}">Buy Stock</a><br> <!-- New Buy Stock section -->
+    <a href="{{ url_for('book_gift') }}">Booking</a>
+    <a href="{{ url_for('buy_stock') }}">Buy Stock</a>
     <a href="{{ url_for('logout') }}">Logout</a>
+  </nav>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="message-box">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="container">
+    <p>Use the navigation bar above to manage your tasks.</p>
+  </div>
+
+  <script>
+    const msg = document.querySelector('.message-box');
+    if (msg) {
+      setTimeout(() => {
+        msg.style.display = 'none';
+      }, 3000);
+    }
+  </script>
+
 </body>
 </html>

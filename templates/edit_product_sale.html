@@ -2,50 +2,112 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Edit Product</title>
+  <title>Edit Product for Sale</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    label { display: block; margin-top: 10px; }
-    input, textarea { width: 100%; padding: 8px; margin-top: 5px; }
-    .form-group { margin-bottom: 15px; }
-    .btn { padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .btn:hover { background-color: #0056b3; }
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      color: #007bff;
+      margin-bottom: 20px;
+    }
+
+    form {
+      max-width: 400px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 5px;
+      box-shadow: 0 0 10px #ccc;
+    }
+
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    img {
+      max-width: 100%;
+      margin-top: 10px;
+      border-radius: 4px;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.1);
+    }
+
+    button[type="submit"] {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      background-color: #28a745;
+      color: white;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #218838;
+    }
+
+    .back-button {
+      display: block;
+      text-align: center;
+      margin-top: 15px;
+      color: #007bff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .back-button:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
-  <h2>Edit Product</h2>
+
+  <h1>Edit Product for Sale</h1>
 
   <form action="{{ url_for('edit_product_sale', product_id=product.id) }}" method="POST" enctype="multipart/form-data">
-    <div class="form-group">
-      <label for="name">Product Name:</label>
-      <input type="text" id="name" name="name" value="{{ product.name }}" required>
-    </div>
+    <label for="name">Product Name:</label>
+    <input type="text" id="name" name="name" value="{{ product.name }}" required>
 
-    <div class="form-group">
-      <label for="description">Description:</label>
-      <textarea id="description" name="description" rows="4" required>{{ product.description }}</textarea>
-    </div>
+    <label for="description">Description:</label>
+    <textarea id="description" name="description" rows="4" required>{{ product.description }}</textarea>
 
-    <div class="form-group">
-      <label for="price">Price (RM):</label>
-      <input type="number" id="price" name="price" value="{{ product.price }}" step="0.01" required>
-    </div>
+    <label for="price">Price (RM):</label>
+    <input type="number" id="price" name="price" step="0.01" min="0.01" value="{{ product.price }}" required>
 
-    <div class="form-group">
-      <label for="quantity">Quantity:</label>
-      <input type="number" id="quantity" name="quantity" value="{{ product.quantity }}" required>
-    </div>
+    <label for="quantity">Quantity:</label>
+    <input type="number" id="quantity" name="quantity" min="1" value="{{ product.quantity }}" required>
 
-    <div class="form-group">
-      <label for="image">Change Image (optional):</label>
-      <input type="file" id="image" name="image">
-    </div>
+    <label for="image">Change Image (optional):</label>
+    <input type="file" id="image" name="image">
 
     {% if product.image_data %}
       <p>Current Image:</p>
-      <img src="{{ url_for('product_sale_image', product_id=product.id) }}" style="max-width: 200px;">
+      <img src="{{ url_for('product_sale_image', product_id=product.id) }}" alt="Current Image">
     {% endif %}
 
-    <button type="submit" class="btn">Update Product</button>
+    <button type="submit">Update Product</button>
   </form>
+
+  <a href="{{ url_for('sale') }}" class="back-button">← Back to Sales</a>
+
 </body>
 </html>

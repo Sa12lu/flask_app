@@ -88,10 +88,10 @@
     <input type="text" name="description" value="{{ gift.description }}" required>
 
     <label>Price (RM):</label>
-    <input type="number" name="price" step="0.01" min="0" id="price" value="{{ gift.price }}" required>
+    <input type="number" name="price" step="0.01" min="0.01" id="price" value="{{ gift.price }}" required>
 
     <label>Amount:</label>
-    <input type="number" name="amount" min="0" id="amount" value="{{ gift.amount }}" required>
+    <input type="number" name="amount" min="1" id="amount" value="{{ gift.amount }}" required>
 
     <label>Change Image (optional):</label>
     <input type="file" name="image">
@@ -107,18 +107,6 @@
 </form>
 
 <a class="back-link" href="{{ url_for('book_gift') }}">← Back to Booked Gifts</a>
-
-<script>
-    const preventNegative = (e) => {
-        if (e.key === '-' || e.key === 'e') {
-            e.preventDefault();
-        }
-    };
-
-    document.getElementById('price').addEventListener('keydown', preventNegative);
-    document.getElementById('amount').addEventListener('keydown', preventNegative);
-</script>
-
 
 </body>
 </html>

@@ -1,100 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <meta charset="UTF-8">
     <title>Booked Gifts</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f9;
-            color: #333;
-        }
+  <style>
+    :root {
+      --main: #007bff;
+      --green: #28a745;
+      --yellow: #ffc107;
+      --red: #dc3545;
+      --blue: #17a2b8;
+      --orange: #fd7e14;
+      --bg: #f4f4f9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: var(--bg);
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--main);
+    }
+
+    .top-buttons {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 15px;
+    }
+
+    .add-button {
+      padding: 10px;
+      background-color: var(--green);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    th {
+      background-color: var(--main);
+      color: #fff;
+    }
+
+    img {
+      width: 100px;
+      height: auto;
+    }
+
+    .actions button {
+      margin-right: 5px;
+      padding: 5px 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .edit-btn {
+      background-color: var(--yellow);
+      color: white;
+    }
+
+    .delete-btn {
+      background-color: var(--red);
+      color: white;
+    }
+
+    .increase-btn {
+      background-color: var(--blue);
+      color: white;
+    }
+
+    .back-button {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: none;
+      border: none;
+      font-size: 26px;
+      color: var(--main);
+      cursor: pointer;
+      z-index: 999;
+    }
+
+    .back-button:hover {
+      color: #4899f0;
+    }
+
+   
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal > div {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 80%;
+  overflow: auto;
+}
 
 
-        h1 {
-            text-align: center;
-            color: #007bff;
-        }
+    .top-return {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+    }
 
+    .modal form button[type="submit"] {
+        background-color: var(--main);
+        color: white;
+        padding: 8px 16px;
+        margin-top: 10px;
+        margin-right: 5px;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+    }
 
-        .top-buttons {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 15px;
-        }
+    .modal form button[type="submit"]:hover {
+        background-color: #0056b3;
+    }
 
+    .modal form button[type="button"] {
+        background-color: #6c757d;
+        color: white;
+        padding: 8px 16px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+    }
 
-        .add-button {
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-
-        th, td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-
-
-        th {
-            background-color: #007bff;
-            color: #fff;
-        }
-
-
-        img {
-            width: 100px;
-            height: auto;
-        }
-
-
-        .actions button {
-            margin-right: 5px;
-            padding: 5px 10px;
-            border: none;
-            cursor: pointer;
-        }
-
-
-        .edit-btn {
-            background-color: #ffc107;
-            color: white;
-        }
-
-
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
-        }
-
-
-        .increase-btn {
-            background-color: #17a2b8;
-            color: white;
-        }
-    </style>
+    .modal form button[type="button"]:hover {
+        background-color: #5a6268;
+    }
+  </style>
 </head>
 <body>
 
+<!-- Back to Dashboard Icon -->
+<button class="back-button" onclick="window.location.href='{{ url_for('dashboard') }}'" title="Back to Dashboard">
+  <i class="fas fa-arrow-left"></i>
+</button>
 
 <h1>Booked Gifts</h1>
 
 
 <div class="top-buttons"style="justify-content: space-between;">
-    <button onclick="openBookedList()" style="background-color:#007bff; color:white; padding:10px; border:none; border-radius:4px;">📋 List</button>
+    <button onclick="openBookedList()" style="background-color:#007bff; color:white; padding:10px; border:none; border-radius:4px;">List</button>
     <a href="{{ url_for('add_gift') }}">
         <button class="add-button">Add Gift</button>
     </a>
@@ -127,7 +215,7 @@
                 </td>
                 <td>{{ gift.gift_name }}</td>  <!-- New -->
                 <td>{{ gift.description }}</td>
-                <td>RM{{ gift.price }}</td>
+                <td>RM{{ '%.2f' | format(gift.price) }}</td>
                 <td id="amount-{{ gift.id }}">{{ gift.amount }}</td>
                 <td class="actions">
                     <a href="{{ url_for('edit_gift', gift_id=gift.id) }}">
@@ -259,21 +347,27 @@ function changeStatus(bookedId) {
 }
 </script>
 
+ 
+<!-- Increase Quantity Modal -->
+<div id="increaseModal" class="modal">
+  <div> <!-- Wrap content inside a flex-centered box -->
+    <h3 id="modalGiftName" style="margin-bottom: 15px;">Add New Quantity</h3>
+    <form method="POST" id="increaseForm" onsubmit="event.preventDefault(); submitIncrease();">
+      <label for="increaseAmount">Enter Amount:</label><br>
+      <input type="number" name="amount" id="increaseAmount" min="1" required
+             style="width: 100%; padding: 8px; margin: 10px 0;"><br>
 
+      <input type="hidden" id="increaseGiftId" name="gift_id" />
 
-
-<!-- Increase Modal -->
-<div id="increaseModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
-    <div style="background:white; padding:20px; border-radius:10px; width:300px;">
-        <h3>Add New Quantity</h3>
-        <input type="number" id="increaseAmount" placeholder="Enter positive amount" min="1" style="width:100%; padding:8px;" />
-        <input type="hidden" id="increaseGiftId" />
-        <div style="margin-top:15px; text-align:right;">
-            <button onclick="submitIncrease()" style="padding:6px 12px; background-color:#17a2b8; color:white; border:none; border-radius:4px;">Submit</button>
-            <button onclick="closeModal()" style="padding:6px 12px; margin-left:5px; background-color:#6c757d; color:white; border:none; border-radius:4px;">Cancel</button>
-        </div>
-    </div>
+      <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+        <button type="submit">Submit</button>
+        <button type="button" onclick="closeModal()">Cancel</button>
+      </div>
+    </form>
+  </div>
 </div>
+
+
 
 <!-- Booked Modal Popup -->
 <div id="bookedModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); justify-content:center; align-items:center;">
@@ -299,8 +393,5 @@ function changeStatus(bookedId) {
         <button onclick="closeBookedList()" style="padding:10px; background-color:#dc3545; color:white; border:none; border-radius:4px;">Close</button>
     </div>
 </div>
-
-
-
 </body>
 </html>

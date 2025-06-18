@@ -6,12 +6,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Management</title>
-    <style>
+   <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f1f1f1;
             padding: 20px;
         }
+
+
 
 
         .header {
@@ -21,10 +23,14 @@
         }
 
 
+
+
         h1 {
             color: #007bff;
             margin: 0;
         }
+
+
 
 
         .add-product-btn {
@@ -44,9 +50,15 @@
 
 
 
+
+
+
+
         .add-product-btn:hover {
             background-color: #218838;
         }
+
+
 
 
         table {
@@ -54,6 +66,8 @@
             border-collapse: collapse;
             background-color: white;
         }
+
+
 
 
         th, td {
@@ -64,10 +78,14 @@
         }
 
 
+
+
         th {
             background-color: #007bff;
             color: white;
         }
+
+
 
 
         td img {
@@ -77,6 +95,8 @@
             display: block;
             margin: auto;
         }
+
+
 
 
         .buy-btn {
@@ -89,9 +109,13 @@
         }
 
 
+
+
         .buy-btn:hover {
             background-color: #218838;
         }
+
+
 
 
         .no-image {
@@ -99,8 +123,7 @@
             text-align: center;
         }
 
-
-        #popup-overlay {
+ #popup-overlay {
             display: none;
             position: fixed;
             top: 0; left: 0;
@@ -108,6 +131,8 @@
             background: rgba(0,0,0,0.4);
             z-index: 999;
         }
+
+
 
 
         #popup {
@@ -121,6 +146,33 @@
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
             z-index: 1000;
         }
+
+    .btn-blue {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btn-blue:hover {
+    background-color: #0056b3;
+  }
+
+  .btn-gray {
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btn-gray:hover {
+    background-color: #5a6268;
+  }
+
 
         .red-dot {
             position: absolute;
@@ -141,12 +193,15 @@
             z-index: 1001;
         }
 
+
         .notification-icon,
         .history-icon {
             cursor: pointer;
             font-size: 24px;
             position: relative;
         }
+
+
 
 
 /* Colored status boxes */
@@ -160,11 +215,13 @@
     transition: 0.3s ease;
 }
 
+
 /* Accept - green */
 .status-box.accept {
     background-color: #e6f4ea;
     color: #1e4620;
 }
+
 
 /* Reject - red */
 .status-box.reject {
@@ -172,11 +229,13 @@
     color: #a1201d;
 }
 
+
 /* Pending - yellow */
 .status-box.pending {
     background-color: #fff9e5;
     color: #8a6d3b;
 }
+
 
 /* Cancel button inside each box */
 .status-box button.remove-entry {
@@ -190,6 +249,7 @@
     cursor: pointer;
     color: #333;
 }
+
 
 .notification-popup-container {
   display: none;              /* default hidden */
@@ -210,9 +270,13 @@
   padding: 20px;
 }
 
+
 .notification-popup-container.show {
   display: flex;  /* when toggled open */
 }
+
+
+
 
 
 
@@ -226,6 +290,8 @@
 }
 
 
+
+
 .notification-popup-container .close-popup {
     position: absolute;
     top: 8px; /* moved closer to top */
@@ -236,6 +302,8 @@
     cursor: pointer;
     color: #333;
 }
+
+
 
 
 .popup-window {
@@ -253,6 +321,7 @@
     z-index: 2000;
 }
 
+
 .history-entry {
     border-bottom: 1px solid #eee;
     padding-bottom: 10px;
@@ -260,6 +329,7 @@
 .history-entry:last-child {
     border-bottom: none;
 }
+
 
 .close-popup {
     background: none;
@@ -269,11 +339,13 @@
     color: #333;
 }
 
+
 .top-right-icons .stock-record-icon {
   cursor: pointer;
   font-size: 24px;
   position: relative;
 }
+
 
 .top-right-icons .stock-checklist-icon {
   cursor: pointer;
@@ -281,9 +353,10 @@
   position: relative;
 }
 
+
 .stock-checklist-popup {
   position: absolute;
-  top: 50px; 
+  top: 50px;
   right: 10px;
   width: 300px;
   max-height: 400px;
@@ -296,6 +369,7 @@
   z-index: 1000;
 }
 
+
 .stock-checklist-popup h3 {
   margin-top: 0;
   font-size: 18px;
@@ -303,11 +377,13 @@
   color: #28a745;
 }
 
+
 .stock-checklist-popup ul {
   list-style-type: none;
   padding-left: 0;
   margin: 0;
 }
+
 
 .stock-checklist-popup ul li {
   display: flex;
@@ -317,13 +393,16 @@
   padding-bottom: 4px;
 }
 
+
 .stock-checklist-popup ul li:last-child {
   border-bottom: none;
 }
 
+
 .stock-checklist-popup .item-name {
   font-weight: bold;
 }
+
 
 .stock-checklist-popup .item-quantity,
 .stock-checklist-popup .item-price {
@@ -331,17 +410,19 @@
   color: #555;
 }
 
+
 .stock-checklist-popup input[type="checkbox"] {
   margin-right: 8px;
 }
 
+
 .stock-checklist-popup label {
   cursor: pointer;
 }
-
     </style>
     <script>
-        function openModal(productId) {
+
+       function openModal(productId) {
             document.getElementById('popup').style.display = 'block';
             document.getElementById('popup-overlay').style.display = 'block';
             document.getElementById('product-id').value = productId;
@@ -637,8 +718,7 @@ function toggleStockChecklistPopup() {
     </tbody>
 </table>
 
-
-<!-- Modal Overlay and Popup -->
+<!-- Background Overlay -->
 <div id="popup-overlay" onclick="closeModal()"></div>
 
 
@@ -646,12 +726,11 @@ function toggleStockChecklistPopup() {
     <h3>Enter Quantity</h3>
     <input type="hidden" id="product-id">
     <input type="number" id="quantity" min="1" placeholder="Quantity" style="padding:5px; width:100%; margin-bottom:10px;">
-    <div style="text-align:right;">
-        <button onclick="submitBuyForm()" style="background-color:#28a745; color:white; border:none; padding:6px 12px; margin-right:10px;">Buy</button>
-        <button onclick="closeModal()" style="background-color:#ccc; border:none; padding:6px 12px;">Cancel</button>
+    <div style="display: flex; justify-content: center; gap: 10px; margin-top: 10px;">
+        <button onclick="submitBuyForm()" class="btn-blue">Buy</button>
+        <button onclick="closeModal()" class="btn-gray">Cancel</button>
     </div>
 </div>
-
 
 </body>
 </html>

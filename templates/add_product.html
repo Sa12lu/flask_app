@@ -1,92 +1,164 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Add Product</title>
-    <style>
-        table {
-            width: 100%;
-            max-width: 600px;
-            margin: 0 auto;
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            width: 30%;
-        }
-        .form-actions {
-            text-align: center;
-        }
-        button, a {
-            margin-top: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Product</title>
+  <style>
+    :root {
+      --main: #007bff;
+      --green: #28a745;
+      --gray: #f4f8fc;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--gray);
+      margin: 0;
+      padding: 30px;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--main);
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      width: 30%;
+      color: #333;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="file"],
+    textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    textarea {
+      resize: vertical;
+    }
+
+    .form-actions {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    button[type="submit"] {
+      padding: 10px 20px;
+      background-color: var(--green);
+      color: white;
+      border: none;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button[type="submit"]:hover {
+      background-color: #218838;
+    }
+
+    a {
+      color: var(--main);
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    label[for] {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .priority-options label {
+      margin-right: 10px;
+    }
+  </style>
 </head>
 <body>
-    <h1 style="text-align: center;">Add Product</h1>
-    <form method="POST" enctype="multipart/form-data">
-        <table>
-            <!-- Product Name -->
-            <tr>
-                <th><label for="name">Name:</label></th>
-                <td><input type="text" id="name" name="name" placeholder="Enter product name" required></td>
-            </tr>
-            
-            <!-- Product Type -->
-            <tr>
-                <th><label for="type">Type:</label></th>
-                <td><input type="text" id="type" name="type" placeholder="Enter product type (e.g., Electronics, Clothing)" required></td>
-            </tr>
-            
-            <!-- Product Description -->
-            <tr>
-                <th><label for="description">Description:</label></th>
-                <td><textarea id="description" name="description" placeholder="Enter product description"></textarea></td>
-            </tr>
-            
-            <!-- Product Quantity -->
-            <tr>
-                <th><label for="quantity">Quantity:</label></th>
-                <td><input type="number" id="quantity" name="quantity" min="0" placeholder="Enter product quantity" required></td>
-            </tr>
-            
-            <!-- Product Priority -->
-            <tr>
-                <th>Priority:</th>
-                <td>
-                    <div>
-                        <input type="radio" id="high" name="priority" value="High">
-                        <label for="high">High</label>
-                        
-                        <input type="radio" id="medium" name="priority" value="Medium">
-                        <label for="medium">Medium</label>
-                        
-                        <input type="radio" id="low" name="priority" value="Low" checked>
-                        <label for="low">Low</label>
-                    </div>
-                </td>
-            </tr>
-            
-            <!-- Product Image -->
-            <tr>
-                <th><label for="image">Image:</label></th>
-                <td><input type="file" id="image" name="image" accept="image/*"></td>
-            </tr>
-        </table>
-        
-        <!-- Submit Button -->
-        <div class="form-actions">
-            <button type="submit">Add Product</button>
-        </div>
-    </form>
-    
+
+  <h1>Add Product</h1>
+
+  <form method="POST" enctype="multipart/form-data">
+    <table>
+      <!-- Name -->
+      <tr>
+        <th><label for="name">Name:</label></th>
+        <td><input type="text" id="name" name="name" placeholder="Enter product name" required></td>
+      </tr>
+
+      <!-- Type -->
+      <tr>
+        <th><label for="type">Type:</label></th>
+        <td><input type="text" id="type" name="type" placeholder="Enter product type" required></td>
+      </tr>
+
+      <!-- Description -->
+      <tr>
+        <th><label for="description">Description:</label></th>
+        <td><textarea id="description" name="description" placeholder="Enter product description"></textarea></td>
+      </tr>
+
+      <!-- Quantity -->
+      <tr>
+        <th><label for="quantity">Quantity:</label></th>
+        <td><input type="number" id="quantity" name="quantity" min="0" placeholder="Enter quantity" required></td>
+      </tr>
+
+      <!-- Priority -->
+      <tr>
+        <th>Priority:</th>
+        <td class="priority-options">
+          <input type="radio" id="high" name="priority" value="High">
+          <label for="high">High</label>
+          <input type="radio" id="medium" name="priority" value="Medium">
+          <label for="medium">Medium</label>
+          <input type="radio" id="low" name="priority" value="Low" checked>
+          <label for="low">Low</label>
+        </td>
+      </tr>
+
+      <!-- Image -->
+      <tr>
+        <th><label for="image">Image:</label></th>
+        <td><input type="file" id="image" name="image" accept="image/*"></td>
+      </tr>
+    </table>
+
+    <!-- Submit Button -->
     <div class="form-actions">
-        <a href="{{ url_for('inventory') }}">Back to Inventory</a>
+      <button type="submit">Add Product</button>
     </div>
+  </form>
+
+  <div class="form-actions">
+    <a href="{{ url_for('inventory') }}">← Back to Inventory</a>
+  </div>
+
 </body>
 </html>
 
