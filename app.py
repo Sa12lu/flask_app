@@ -54,12 +54,13 @@ class SaleProduct(db.Model):
     image_data = db.Column(db.LargeBinary, nullable=True)  
     image_mimetype = db.Column(db.String(50), nullable=True)  
 
-class PurchasedProduct(db.Model):
+    class PurchasedProduct(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
     status = db.Column(db.String(50), nullable=False, default="Pending")
-    username = db.Column(db.String(150), nullable=False)  # Add this line
+    username = db.Column(db.String(150), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('cust_user.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)  # add NEW time date
     sale_product_id = db.Column(db.Integer, db.ForeignKey('sale_product.id'), nullable=False)  # ✅ NEW
 
