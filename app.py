@@ -18,6 +18,12 @@ app.secret_key = 'your_secret_key'
 # MySQL Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:GaQSDgaPsJnHGflsOhvogTsKqKmmexIm@tramway.proxy.rlwy.net:31763/railway'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+
+#Xampp
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/flask_app'
+#app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 # File Upload Configuration
@@ -54,7 +60,7 @@ class SaleProduct(db.Model):
     image_data = db.Column(db.LargeBinary, nullable=True)  
     image_mimetype = db.Column(db.String(50), nullable=True)  
 
-    class PurchasedProduct(db.Model):
+class PurchasedProduct(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)

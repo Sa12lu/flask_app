@@ -18,7 +18,7 @@
 
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             position: relative;
         }
 
@@ -30,35 +30,21 @@
             margin: 0;
         }
 
-
-
-
         .add-product-btn {
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: #28a745;
-            color: white;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 4px;
-            text-decoration: none;
-            font-size: 14px;
+          display: inline-block;
+          background-color: #28a745;
+          color: white;
+          padding: 10px 18px;
+          border: none;
+          border-radius: 4px;
+          text-decoration: none;
+          font-size: 14px;
+          margin-bottom: 15px; /* adds space below */
         }
-
-
-
-
-
-
-
 
         .add-product-btn:hover {
-            background-color: #218838;
+          background-color: #218838;
         }
-
-
 
 
         table {
@@ -419,6 +405,23 @@
 .stock-checklist-popup label {
   cursor: pointer;
 }
+
+    .back-button {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: none;
+      border: none;
+      font-size: 26px;
+      color: var(--main);
+      cursor: pointer;
+      z-index: 999;
+    }
+
+    .back-button:hover {
+      color: #4899f0;
+    }
+
     </style>
     <script>
 
@@ -556,6 +559,10 @@ function toggleStockChecklistPopup() {
     </script>
 </head>
 <body>
+<!-- Back to Dashboard Icon -->
+<button class="back-button" onclick="window.location.href='{{ url_for('dashboard') }}'" title="Back to Dashboard">
+  <i class="fas fa-arrow-left"style="color: #007bff;"></i>
+</button>
 
 <!-- Fixed Top-Right Icon Container -->
 <div class="top-right-icons">
@@ -588,8 +595,9 @@ function toggleStockChecklistPopup() {
 <!-- Original Header -->
 <div class="header">
     <h1>Buy Stock</h1>
-    <a href="{{ url_for('add_stock') }}" class="add-product-btn">New Product</a>
 </div>
+
+<a href="{{ url_for('add_stock') }}" class="add-product-btn">New Product</a>
 
 <!-- Notification Popup -->
 <div id="notificationPopup" class="notification-popup-container">
